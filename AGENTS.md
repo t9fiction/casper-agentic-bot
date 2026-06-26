@@ -101,6 +101,52 @@ casper-client query-global-state \
     --key hash-e294029ed8d748f31ab36690e6f68bc777cef9094cfbb0a91fd8c3c41745ba72
 ```
 
+## How to Call Entry Points (Read & Write)
+
+Set env vars:
+```bash
+export NODE=http://65.109.115.124:7777
+export CHAIN=casper-test
+export PACKAGE=hash-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4
+export KEY=secret_key.pem
+```
+
+**Read:** `get_greeting` — submits a tx, then check `"error_message": null`
+```bash
+casper-client put-transaction package \
+    --node-address $NODE --chain-name $CHAIN \
+    --secret-key $KEY \
+    --contract-package-hash $PACKAGE \
+    --session-entry-point get_greeting \
+    --payment-amount 5000000000 \
+    --standard-payment true --gas-price-tolerance 1
+```
+
+**Write:** `set_greeting` — pass the new greeting as a session arg
+```bash
+casper-client put-transaction package \
+    --node-address $NODE --chain-name $CHAIN \
+    --secret-key $KEY \
+    --contract-package-hash $PACKAGE \
+    --session-entry-point set_greeting \
+    --session-arg "greeting:string='GM Casper!'" \
+    --payment-amount 5000000000 \
+    --standard-payment true --gas-price-tolerance 1
+```
+
+**Call:** `greet` — returns "Hello, {greeting}!" and increments counter
+```bash
+casper-client put-transaction package \
+    --node-address $NODE --chain-name $CHAIN \
+    --secret-key $KEY \
+    --contract-package-hash $PACKAGE \
+    --session-entry-point greet \
+    --payment-amount 5000000000 \
+    --standard-payment true --gas-price-tolerance 1
+```
+
+Check results: `casper-client get-transaction --node-address $NODE <TX_HASH>`
+
 ## Decisions Made
 - **Python + LangGraph** over Node.js (user preference for LangChain ecosystem)
 - **Hosted Casper MCP Server** (no local node or Docker needed)
