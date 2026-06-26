@@ -4,109 +4,225 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Casper Agentic Bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --bg-primary: #0a0a12;
+      --bg-secondary: #111120;
+      --bg-tertiary: #1a1a30;
+      --bg-card: #131326;
+      --border: #1e1e3a;
+      --border-active: #3a3a6a;
+      --text-primary: #e8e8f0;
+      --text-secondary: #9090b0;
+      --text-muted: #606080;
+      --accent: #6c6cff;
+      --accent-hover: #8080ff;
+      --accent-subtle: rgba(108, 108, 255, 0.1);
+      --green: #34d399;
+      --green-subtle: rgba(52, 211, 153, 0.1);
+      --red: #f87171;
+      --red-subtle: rgba(248, 113, 113, 0.1);
+      --orange: #fbbf24;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0d0d1a;
-      color: #e0e0e0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+    /* Header */
     header {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      padding: 12px 24px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
       display: flex;
       align-items: center;
       gap: 12px;
-      border-bottom: 1px solid #2a2a4a;
+      flex-shrink: 0;
     }
-    header h1 { font-size: 18px; font-weight: 600; color: #fff; }
-    header .badge { background: #e63946; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-    header .net-badge { background: #2a2a4a; color: #aaa; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
-    .tabs { display: flex; margin-left: auto; gap: 4px; }
-    .tabs button {
-      background: transparent; border: 1px solid #333; color: #888; padding: 6px 14px;
-      border-radius: 6px; font-size: 12px; cursor: pointer; transition: all .2s;
+    header .logo {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
     }
-    .tabs button.active { background: #4a4a8a; border-color: #4a4a8a; color: #fff; }
-    .tabs button:hover:not(.active) { border-color: #4a4a8a; color: #ccc; }
+    header h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    header .badge {
+      font-size: 10px; font-weight: 600; padding: 2px 8px;
+      border-radius: 10px; background: var(--accent-subtle); color: var(--accent);
+      border: 1px solid rgba(108, 108, 255, 0.2);
+    }
+    header .tabs { display: flex; margin-left: auto; gap: 2px; background: var(--bg-tertiary); border-radius: var(--radius-sm); padding: 2px; }
+    header .tabs button {
+      background: transparent; border: none; color: var(--text-muted); padding: 6px 14px;
+      border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: all .15s; font-family: inherit;
+    }
+    header .tabs button.active { background: var(--accent); color: #fff; }
+    header .tabs button:not(.active):hover { color: var(--text-secondary); }
+    header .status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); margin-left: 8px; }
+    header .status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    /* Tab content */
     .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
     .tab-content.active { display: flex; }
-    #monitorTab {
-      padding: 20px; overflow-y: auto; gap: 16px;
+
+    /* Chat */
+    .chat-container {
+      flex: 1; overflow-y: auto; padding: 20px 24px;
+      display: flex; flex-direction: column; gap: 12px;
     }
-    #monitorTab h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-    #monitorTab p { color: #888; font-size: 13px; margin-bottom: 16px; }
-    .monitor-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-    .monitor-form input, .monitor-form button {
-      background: #1a1a30; border: 1px solid #333; border-radius: 8px;
-      padding: 10px 14px; color: #e0e0e0; font-size: 13px;
+    .message {
+      max-width: 80%; padding: 12px 16px; border-radius: var(--radius);
+      line-height: 1.6; font-size: 13.5px;
+      animation: fadeIn .2s ease;
     }
-    .monitor-form input:focus { border-color: #4a4a8a; outline: none; }
-    .monitor-form button {
-      background: #4a4a8a; color: #fff; border: none; cursor: pointer; font-weight: 600;
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .message.user {
+      background: var(--accent-subtle); border: 1px solid rgba(108,108,255,0.15);
+      align-self: flex-end; color: #d0d0ff;
     }
-    .monitor-form button:hover { background: #5a5aaa; }
-    .monitor-item {
-      background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 10px;
-      padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
+    .message.bot {
+      background: var(--bg-card); border: 1px solid var(--border);
+      align-self: flex-start; color: var(--text-primary);
     }
-    .monitor-item .info { flex: 1; }
-    .monitor-item .info .addr { font-size: 13px; color: #4af; word-break: break-all; }
-    .monitor-item .info .label { font-size: 11px; color: #888; }
-    .monitor-item .remove-btn {
-      background: transparent; border: 1px solid #e63946; color: #e63946;
-      border-radius: 6px; padding: 6px 12px; font-size: 11px; cursor: pointer;
+    .message.bot.loading { opacity: 0.5; }
+    .message .typing { display: flex; gap: 4px; padding: 2px 0; }
+    .message .typing span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted);
+      animation: bounce 1.4s infinite;
     }
-    .monitor-item .remove-btn:hover { background: #e63946; color: #fff; }
-    .alert-box {
-      background: #1a2a1a; border: 1px solid #2a4a2a; border-radius: 8px;
-      padding: 10px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;
+    .message .typing span:nth-child(2) { animation-delay: .2s; }
+    .message .typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+    .message code {
+      background: var(--bg-tertiary); padding: 1px 6px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent);
     }
-    .alert-box .time { color: #888; font-size: 11px; }
-    .chat-container { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
-    .message { max-width: 85%; padding: 10px 14px; border-radius: 10px; line-height: 1.5; font-size: 13px; white-space: pre-wrap; }
-    .message.user { background: #1a3a5c; align-self: flex-end; border-bottom-right-radius: 4px; }
-    .message.bot { background: #1e1e32; align-self: flex-start; border-bottom-left-radius: 4px; }
-    .message.bot.loading { opacity: 0.6; }
-    .message code { background: #2a2a4a; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
-    .message .tx-link { color: #4af; text-decoration: none; }
-    .message .tx-link:hover { text-decoration: underline; }
-    .input-area { padding: 12px 20px; background: #12122a; border-top: 1px solid #2a2a4a; display: flex; gap: 10px; }
-    .input-area input {
-      flex: 1; background: #1a1a30; border: 1px solid #333; border-radius: 8px;
-      padding: 10px 14px; color: #e0e0e0; font-size: 13px; outline: none;
+    .message pre {
+      background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px; margin: 8px 0; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.5;
     }
-    .input-area input:focus { border-color: #4a4a8a; }
-    .input-area button {
-      background: #4a4a8a; color: #fff; border: none; border-radius: 8px;
-      padding: 10px 20px; font-size: 13px; cursor: pointer; font-weight: 600;
-    }
-    .input-area button:hover { background: #5a5aaa; }
-    .input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .message a { color: var(--accent); text-decoration: none; }
+    .message a:hover { text-decoration: underline; }
+    .message strong { font-weight: 600; color: #fff; }
+    .message hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+    /* Suggestions */
     .suggestions {
-      display: flex; gap: 6px; padding: 0 20px 12px; flex-wrap: wrap;
+      display: flex; gap: 6px; padding: 0 24px 12px; flex-wrap: wrap; flex-shrink: 0;
     }
     .suggestions button {
-      background: #1e1e32; border: 1px solid #333; border-radius: 14px;
-      padding: 5px 12px; color: #aaa; font-size: 11px; cursor: pointer; transition: all .2s;
+      background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 16px;
+      padding: 5px 14px; color: var(--text-secondary); font-size: 11.5px; cursor: pointer;
+      transition: all .15s; font-family: inherit; font-weight: 500;
     }
-    .suggestions button:hover { border-color: #4a4a8a; color: #fff; }
-    .empty-state { text-align: center; color: #555; padding: 40px 20px; }
-    .empty-state h3 { font-size: 16px; margin-bottom: 8px; }
-    .empty-state p { font-size: 13px; }
-    .badge-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
-    .badge-dot.green { background: #4caf50; }
-    .badge-dot.red { background: #e63946; }
+    .suggestions button:hover { border-color: var(--border-active); color: var(--text-primary); background: var(--bg-card); }
+
+    /* Input */
+    .input-area {
+      padding: 12px 24px 16px; background: var(--bg-secondary);
+      border-top: 1px solid var(--border); display: flex; gap: 10px;
+      flex-shrink: 0;
+    }
+    .input-area .input-wrap {
+      flex: 1; display: flex; align-items: center;
+      background: var(--bg-tertiary); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0 14px; transition: border-color .15s;
+    }
+    .input-area .input-wrap:focus-within { border-color: var(--border-active); }
+    .input-area input {
+      flex: 1; background: transparent; border: none;
+      padding: 11px 0; color: var(--text-primary); font-size: 13.5px;
+      outline: none; font-family: inherit;
+    }
+    .input-area input::placeholder { color: var(--text-muted); }
+    .input-area .send-btn {
+      background: var(--accent); color: #fff; border: none; border-radius: var(--radius);
+      padding: 0 22px; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .15s; font-family: inherit;
+    }
+    .input-area .send-btn:hover { background: var(--accent-hover); }
+    .input-area .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Monitor Tab */
+    #monitorTab {
+      padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;
+    }
+    #monitorTab .section-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+    #monitorTab .section-desc { font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px; }
+    .monitor-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    }
+    @media (max-width: 900px) { .monitor-grid { grid-template-columns: 1fr; } }
+    .monitor-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px;
+    }
+    .monitor-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .monitor-card h3 .icon { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .monitor-card h3 .icon.blue { background: var(--accent-subtle); color: var(--accent); }
+    .monitor-card h3 .icon.green { background: var(--green-subtle); color: var(--green); }
+    .monitor-form { display: flex; flex-direction: column; gap: 10px; }
+    .monitor-form .row { display: flex; gap: 10px; }
+    .monitor-form .row input { flex: 1; }
+    .monitor-form input {
+      background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 9px 12px; color: var(--text-primary); font-size: 13px; outline: none; font-family: inherit;
+    }
+    .monitor-form input:focus { border-color: var(--border-active); }
+    .monitor-form input::placeholder { color: var(--text-muted); }
+    .monitor-form .track-btn {
+      background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm);
+      padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background .15s;
+    }
+    .monitor-form .track-btn:hover { background: var(--accent-hover); }
+    .monitor-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .monitor-item:last-child { border-bottom: none; }
+    .monitor-item .addr { font-size: 12.5px; color: var(--accent); font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+    .monitor-item .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .monitor-item .remove-btn {
+      background: transparent; border: 1px solid var(--red-subtle); color: var(--red);
+      border-radius: var(--radius-sm); padding: 5px 12px; font-size: 11px; cursor: pointer;
+      font-family: inherit; transition: all .15s; flex-shrink: 0;
+    }
+    .monitor-item .remove-btn:hover { background: var(--red-subtle); }
+    .empty-state { text-align: center; padding: 30px 20px; color: var(--text-muted); }
+    .empty-state h4 { font-size: 14px; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
+    .empty-state p { font-size: 12.5px; }
+    .alert-item {
+      background: var(--green-subtle); border: 1px solid rgba(52,211,153,0.15);
+      border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;
+    }
+    .alert-item .time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Casper Agentic Bot</h1>
-    <span class="badge">AI</span>
-    <span class="net-badge" id="networkBadge">testnet</span>
+    <div class="logo">C</div>
+    <h1>Agentic Bot</h1>
+    <span class="badge">AI Agent</span>
+    <div class="status"><span class="dot"></span>Testnet</div>
     <div class="tabs">
       <button class="active" onclick="switchTab('chat')">Chat</button>
       <button onclick="switchTab('monitor')">Monitor</button>
@@ -115,61 +231,73 @@
 
   <!-- Chat Tab -->
   <div class="tab-content active" id="chatTab">
-    <div class="chat-container" id="chatContainer">
-      <div class="message bot">
-        Hi! I'm an AI agent that can query the Casper blockchain, send transfers, and analyze accounts.
-
-        Try asking:
-        • "What's the network status?"
-        • "Show me the latest 5 blocks"
-        • "Send 5 CSPR to account-hash-..."
-        • "Analyze account account-hash-..."
-        • "Monitor account-hash-... for big transactions"
-      </div>
-    </div>
+    <div class="chat-container" id="chatContainer"></div>
     <div class="suggestions" id="suggestions">
       <button onclick="sendSuggestion('What is the current network status?')">Network Status</button>
       <button onclick="sendSuggestion('Show me the latest 5 blocks')">Latest Blocks</button>
-      <button onclick="sendSuggestion('List the validators')">Validators</button>
+      <button onclick="sendSuggestion('List the active validators')">Validators</button>
       <button onclick="sendSuggestion('What is the total CSPR supply?')">Supply</button>
-      <button onclick="sendSuggestion('Explain how CSPR transfers work')">How transfers work</button>
+      <button onclick="sendSuggestion('How do transfers work on Casper?')">Transfers</button>
+      <button onclick="sendSuggestion('Analyze account account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Analyze Account</button>
     </div>
     <div class="input-area">
-      <input type="text" id="messageInput" placeholder="Ask about Casper, send CSPR, analyze accounts..." autofocus />
-      <button id="sendBtn" onclick="sendMessage()">Send</button>
+      <div class="input-wrap">
+        <input type="text" id="messageInput" placeholder="Ask about Casper, send CSPR, analyze accounts..." autofocus />
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
   </div>
 
   <!-- Monitor Tab -->
   <div class="tab-content" id="monitorTab">
-    <h2>Account Monitor</h2>
-    <p>Watch Casper accounts for activity. When new transactions are detected, alerts appear below.</p>
-    <div class="monitor-form">
-      <input type="text" id="monitorAccount" placeholder="account-hash-..." style="flex:2;min-width:200px" />
-      <input type="text" id="monitorLabel" placeholder="Label (e.g. Whale 1)" style="flex:1;min-width:120px" />
-      <input type="number" id="monitorMinAmount" placeholder="Min CSPR" style="width:100px" value="0" />
-      <button onclick="addMonitor()">Track Account</button>
+    <div class="monitor-grid">
+      <div class="monitor-card">
+        <h3><span class="icon blue">+</span> Track Account</h3>
+        <div class="monitor-form">
+          <input type="text" id="monitorAccount" placeholder="account-hash-..." />
+          <div class="row">
+            <input type="text" id="monitorLabel" placeholder="Label (e.g. Whale 1)" />
+            <input type="number" id="monitorMinAmount" placeholder="Min CSPR" value="0" style="width:110px" />
+          </div>
+          <button class="track-btn" onclick="addMonitor()">Start Monitoring</button>
+        </div>
+      </div>
+      <div class="monitor-card">
+        <h3><span class="icon green">&#9679;</span> Active Monitors</h3>
+        <div id="monitorList"><div class="empty-state"><h4>No monitored accounts</h4><p>Add an account hash to start tracking activity.</p></div></div>
+      </div>
     </div>
-    <div id="monitorList"></div>
-    <div id="monitorAlerts"></div>
+    <div class="monitor-card" style="margin-top:0">
+      <h3><span class="icon green">!</span> Alert Feed</h3>
+      <div id="monitorAlerts"><div class="empty-state"><p>No alerts yet. Alerts appear here when monitored accounts show activity.</p></div></div>
+    </div>
   </div>
 
   <script>
     let activeMonitors = [];
     let alerts = [];
+    let pollTimer = null;
 
-    async function switchTab(name) {
+    function switchTab(name) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
       document.getElementById(name + 'Tab').classList.add('active');
       event.target.classList.add('active');
       if (name === 'monitor') { loadMonitors(); startPolling(); }
-      else { stopPolling(); }
+      else stopPolling();
     }
 
     const chatContainer = document.getElementById('chatContainer');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
+
+    function addWelcome() {
+      const div = document.createElement('div');
+      div.className = 'message bot';
+      div.innerHTML = `<strong>Casper Agentic Bot</strong><br><br>Ask me about the Casper blockchain, send transfers, analyze accounts, or monitor whale activity.<br><br><span style="color:var(--text-muted)">Try one of the suggestions above, or type anything.</span>`;
+      chatContainer.appendChild(div);
+    }
+    addWelcome();
 
     function addMessage(text, role) {
       const div = document.createElement('div');
@@ -183,7 +311,7 @@
       const div = document.createElement('div');
       div.className = 'message bot loading';
       div.id = 'loadingMsg';
-      div.textContent = 'Thinking...';
+      div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
       chatContainer.appendChild(div);
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -191,6 +319,25 @@
     function removeLoading() {
       const el = document.getElementById('loadingMsg');
       if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    function formatMessage(text) {
+      let html = escapeHtml(text);
+      // Code blocks
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre>$2</pre>');
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Bold
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      // Lines
+      html = html.replace(/\n/g, '<br>');
+      return html;
     }
 
     async function sendMessage() {
@@ -215,9 +362,8 @@
         addMessage('Error: Could not reach the server.', 'bot');
       }
       sendBtn.disabled = false;
-      // If user mentioned monitor, switch to monitor tab
-      if (msg.toLowerCase().includes('monitor') || msg.toLowerCase().includes('watch') || msg.toLowerCase().includes('track')) {
-        setTimeout(() => switchTab('monitor'), 500);
+      if (/monitor|watch|track/i.test(msg)) {
+        setTimeout(() => switchTab('monitor'), 600);
       }
     }
 
@@ -243,14 +389,14 @@
     function renderMonitors() {
       const list = document.getElementById('monitorList');
       if (activeMonitors.length === 0) {
-        list.innerHTML = '<div class="empty-state"><h3>No accounts being monitored</h3><p>Add an account hash above to start tracking activity.</p></div>';
+        list.innerHTML = '<div class="empty-state"><h4>No monitored accounts</h4><p>Add an account hash to start tracking activity.</p></div>';
         return;
       }
       list.innerHTML = activeMonitors.map(m => `
         <div class="monitor-item">
-          <div class="info">
+          <div>
             <div class="addr">${m.account}</div>
-            <div class="label">${m.label} &middot; Min: ${m.min_cspr} CSPR ${m.active ? '<span class="badge-dot green"></span>Active' : '<span class="badge-dot red"></span>Inactive'}</div>
+            <div class="meta">${m.label || 'Unlabeled'} &middot; Min ${m.min_cspr} CSPR ${m.active ? '&middot; Active' : ''}</div>
           </div>
           <button class="remove-btn" onclick="removeMonitor('${m.id}')">Remove</button>
         </div>
@@ -261,7 +407,7 @@
       const account = document.getElementById('monitorAccount').value.trim();
       const label = document.getElementById('monitorLabel').value.trim();
       const min = parseFloat(document.getElementById('monitorMinAmount').value) || 0;
-      if (!account) return alert('Enter an account hash');
+      if (!account) return;
       try {
         await fetch('/api/monitors', {
           method: 'POST',
@@ -281,7 +427,6 @@
       } catch {}
     }
 
-    let pollTimer = null;
     function startPolling() {
       stopPolling();
       pollTimer = setInterval(fetchAlerts, 5000);
@@ -302,15 +447,17 @@
 
     function renderAlerts() {
       const container = document.getElementById('monitorAlerts');
-      if (alerts.length === 0) return;
-      container.innerHTML = '<h3 style="font-size:14px;font-weight:600;margin:16px 0 8px;color:#4caf50">Recent Alerts</h3>' +
-        alerts.map(a => `
-          <div class="alert-box">
-            <div><strong>${a.label || a.account}</strong></div>
-            <div style="font-size:12px;color:#aaa;margin-top:2px">${a.data || 'Activity detected'}</div>
-            <div class="time">${new Date(a.timestamp).toLocaleTimeString()}</div>
-          </div>
-        `).join('');
+      if (alerts.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No alerts yet. Alerts appear here when monitored accounts show activity.</p></div>';
+        return;
+      }
+      container.innerHTML = alerts.map(a => `
+        <div class="alert-item">
+          <strong>${escapeHtml(a.label || a.account)}</strong>
+          <div>${escapeHtml((a.data || 'Activity detected').slice(0, 300))}</div>
+          <div class="time">${new Date(a.timestamp).toLocaleTimeString()}</div>
+        </div>
+      `).join('');
     }
   </script>
 </body>
