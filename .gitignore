@@ -1,3 +1,4 @@
+secret_key.pem
 __pycache__/
 .venv/
 .env
