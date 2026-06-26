@@ -53,9 +53,28 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 - [x] langgraph in requirements.txt
 - [x] secret_key.pem + target/ gitignored
 - [x] Pushed to GitHub (github.com/t9fiction/casper-agentic-bot)
-- [ ] Deploy smart contract to Casper Testnet
+- [x] Deploy smart contract to Casper Testnet 🎉
 - [ ] Record demo video
 - [ ] Submit on DoraHacks
+
+## Deployed Contract (Casper Testnet)
+| Field | Value |
+|---|---|
+| Network | Casper Testnet (casper-test) |
+| Deploy method | `put-transaction session` with `--install-upgrade` |
+| Contract Package Hash | `contract-package-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4` |
+| Contract Hash | `contract-e294029ed8d748f31ab36690e6f68bc777cef9094cfbb0a91fd8c3c41745ba72` |
+| Account Hash | `account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5` |
+| Node | `65.109.115.124:7777` |
+| Block Height | 8305683 |
+| Deploy Cost | ~231 CSPR (limit 500 CSPR) |
+| Entry Points | `init`, `get_greeting`, `set_greeting`, `greet`, `get_greet_count` |
+
+### Deploy Notes
+- Used `put-transaction session` (not deprecated `put-deploy`)
+- Required args: `odra_cfg_package_hash_key_name`, `odra_cfg_allow_key_override`, `odra_cfg_is_upgradable`, `odra_cfg_is_upgrade`, and init args
+- 500 CSPR payment was needed — the 280KB wasm consumed ~231 CSPR
+- `put-deploy` was deprecated; `put-transaction` with `--install-upgrade` flag is the correct Casper 2.0 approach
 
 ## How to Run
 ```bash
