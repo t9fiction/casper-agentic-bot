@@ -28,38 +28,45 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 ## Key Files
 | File | Purpose |
 |---|---|
-| `src/main.py` | FastAPI server, serves UI + POST /api/chat |
+| `src/main.py` | FastAPI server, serves UI + POST /api/chat, monitor endpoints |
 | `src/agent.py` | LangGraph react agent (create_react_agent) |
-| `src/tools.py` | LangChain tool: query_casper_blockchain (wraps MCP call_tool) |
+| `src/tools.py` | LangChain tools: query_casper_blockchain, send_cspr_transfer, analyze_account, call_contract_entry_point |
 | `src/mcp_client.py` | Async MCP client (streamable_http to hosted MCP) |
-| `src/public/index.html` | Dark-themed chat UI |
-| `smart-contract/src/greeter.rs` | Odra Greeter contract module |
-| `smart-contract/src/lib.rs` | Crate root (no_std, extern alloc, pub mod greeter) |
-| `smart-contract/Odra.toml` | Contract definition (greeter::Greeter) |
-| `smart-contract/bin/build_contract.rs` | Wasm build binary target |
-| `smart-contract/build.rs` | Odra build script |
-| `smart-contract/.cargo/config.toml` | Wasm target-cpu + allow-undefined linker flag |
-| `smart-contract/rust-toolchain` | Nightly toolchain pin |
-| `AGENTS.md` | This file — project context for resume support |
-| `src/transfers.py` | CSPR transfer tool (subprocess to casper-client) |
-| `src/account_analyzer.py` | Account analysis (biggest tx, details) |
+| `src/account_analyzer.py` | Account analysis (balance, biggest tx scanning) |
 | `src/monitor.py` | Background account monitor (30s poll loop) |
+| `src/public/index.html` | Dark-themed chat UI with nav link to /monitor |
+| `src/public/monitor.html` | Standalone monitor page at /monitor |
+| `smart-contract/src/token_factory.rs` | Token Factory contract (deploy_token, transfer, balance_of, mint, token_info, total_tokens) |
+| `smart-contract/src/lib.rs` | Crate root (no_std/no_main for wasm, pub mod token_factory) |
+| `smart-contract/Odra.toml` | Contract definition (token_factory::TokenFactory) |
+| `smart-contract/bin/build_contract.rs` | Wasm build binary target |
+| `smart-contract/bin/build_schema.rs` | Schema generation binary target |
+| `smart-contract/bin/cli.rs` | CLI deploy script binary target |
+| `smart-contract/build.rs` | Odra build script |
+| `smart-contract/.cargo/config.toml` | Wasm target-cpu + allow-undefined linker flag + build-std config |
+| `smart-contract/rust-toolchain` | Nightly toolchain pin |
+| `tests/test_integration.py` | Python integration tests (12 tests) |
+| `AGENTS.md` | This file — project context for resume support |
 
 ## Current State
 - [x] Project scaffolding (Python + FastAPI + LangChain)
 - [x] FastAPI server with /api/chat endpoint
 - [x] LangGraph agent with MCP tool routing
 - [x] Python MCP client (streamable_http → mcp.testnet.cspr.cloud)
-- [x] Web chat UI (chat + monitor tabs)
-- [x] Smart contract code (Odra Greeter) + wasm binary builds
+- [x] Web chat UI (clean single-page, no tabs, Casper-focused hero)
+- [x] Smart contract code (Odra Greeter → Token Factory) + wasm binary builds (160KB)
 - [x] .env configured with API keys
 - [x] langgraph in requirements.txt
-- [x] secret_key.pem + target/ gitignored
+- [x] SECRET_KEY env var (PEM content) + target/ gitignored
 - [x] Pushed to GitHub (github.com/t9fiction/casper-agentic-bot)
-- [x] Deploy smart contract to Casper Testnet 🎉
 - [x] CSPR transfer tool (agent signs + submits transactions)
 - [x] Account analysis tool (account details, biggest tx scanning)
-- [x] Account monitoring feature (background watcher, alerts via UI)
+- [x] call_contract_entry_point tool (agent calls Token Factory entry points)
+- [x] Monitor feature moved to standalone /monitor page (nav links on both pages)
+- [x] Token Factory contract replaces Greeter (deploy_token, transfer, balance_of, mint)
+- [x] Python integration tests (12 tests pass — imports, MCP client, account analyzer, CSPR transfer, contract calls, agent responses)
+- [ ] Deploy Token Factory to Casper Testnet
+- [ ] Set CONTRACT_PACKAGE_HASH env var after deployment
 - [ ] Record demo video
 - [ ] Submit on DoraHacks
 
@@ -68,19 +75,42 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 |---|---|
 | Network | Casper Testnet (casper-test) |
 | Deploy method | `put-transaction session` with `--install-upgrade` |
-| Contract Package Hash | `contract-package-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4` |
-| Contract Hash | `contract-e294029ed8d748f31ab36690e6f68bc777cef9094cfbb0a91fd8c3c41745ba72` |
+| Contract Package Hash | `contract-package-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4` (old Greeter — needs redeploy for Token Factory) |
 | Account Hash | `account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5` |
 | Node | `65.109.115.124:7777` |
-| Block Height | 8305683 |
-| Deploy Cost | ~231 CSPR (limit 500 CSPR) |
-| Entry Points | `init`, `get_greeting`, `set_greeting`, `greet`, `get_greet_count` |
+| Block Height | 8305683 (old) |
+| Deploy Cost (old) | ~231 CSPR (limit 500 CSPR) for Greeter (280KB wasm) |
 
-### Deploy Notes
-- Used `put-transaction session` (not deprecated `put-deploy`)
-- Required args: `odra_cfg_package_hash_key_name`, `odra_cfg_allow_key_override`, `odra_cfg_is_upgradable`, `odra_cfg_is_upgrade`, and init args
-- 500 CSPR payment was needed — the 280KB wasm consumed ~231 CSPR
-- `put-deploy` was deprecated; `put-transaction` with `--install-upgrade` flag is the correct Casper 2.0 approach
+### Token Factory Entry Points
+| Entry Point | Args | Returns | Description |
+|---|---|---|---|
+| `deploy_token` | `name: String, symbol: String, decimals: u8, total_supply: U256` | `u32` (token_id) | Deploy a new token, deployer gets full supply |
+| `transfer` | `token_id: u32, recipient: Address, amount: U256` | `()` | Transfer tokens between accounts |
+| `balance_of` | `token_id: u32, owner: Address` | `U256` | Query token balance |
+| `token_info` | `token_id: u32` | `Option<TokenInfo>` | Get token metadata |
+| `total_tokens` | (none) | `u32` | Count of deployed tokens |
+| `mint` | `token_id: u32, recipient: Address, amount: U256` | `()` | Mint new tokens (deployer only) |
+
+### Deploy Notes (Token Factory)
+- Wasm binary: 160KB (smaller than Greeter's 280KB)
+- Deploy command template (fill in actual env vars):
+  ```bash
+  casper-client put-transaction session \
+    --node-address $NODE --chain-name $CHAIN \
+    --secret-key $KEY \
+    --session-path smart-contract/target/wasm32-unknown-unknown/release/casper_agentic_token_factory_build_contract.wasm \
+    --install-upgrade \
+    --session-arg "odra_cfg_package_hash_key_name:string='token_factory'" \
+    --session-arg "odra_cfg_allow_key_override:bool='true'" \
+    --session-arg "odra_cfg_is_upgradable:bool='true'" \
+    --session-arg "odra_cfg_is_upgrade:bool='false'" \
+    --payment-amount 500000000000
+  ```
+
+### Test Note
+- `cargo test` on nightly 1.90.0 fails due to `serde_core` alloc conflict (nightly toolchain issue, not code bug)
+- Contract compiles to wasm correctly (verified: 160KB .wasm file)
+- Python integration tests pass (12/12): `python -m pytest tests/test_integration.py -v --asyncio-mode=auto`
 
 ## How to Run
 ```bash
@@ -99,12 +129,12 @@ uvicorn src.main:app --reload
 casper-client query-global-state \
     --node-address http://65.109.115.124:7777 \
     --key account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5 \
-    -q "greeter"
+    -q "token_factory"
 
 # Query contract entity to see entry points
 casper-client query-global-state \
     --node-address http://65.109.115.124:7777 \
-    --key hash-e294029ed8d748f31ab36690e6f68bc777cef9094cfbb0a91fd8c3c41745ba72
+    --key hash-<CONTRACT_HASH>
 ```
 
 ## How to Call Entry Points (Read & Write)
@@ -113,40 +143,48 @@ Set env vars:
 ```bash
 export NODE=http://65.109.115.124:7777
 export CHAIN=casper-test
-export PACKAGE=hash-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4
-export KEY=secret_key.pem
+export PACKAGE=hash-<DEPLOYED_PACKAGE_HASH>
+export KEY=<(echo "$SECRET_KEY")
 ```
 
-**Read:** `get_greeting` — submits a tx, then check `"error_message": null`
+**Deploy a token:** `deploy_token`
 ```bash
 casper-client put-transaction package \
     --node-address $NODE --chain-name $CHAIN \
     --secret-key $KEY \
     --contract-package-hash $PACKAGE \
-    --session-entry-point get_greeting \
+    --session-entry-point deploy_token \
+    --session-arg "name:string='MyToken'" \
+    --session-arg "symbol:string='MTK'" \
+    --session-arg "decimals:u8='8'" \
+    --session-arg "total_supply:u256='1000000'" \
     --payment-amount 5000000000 \
     --standard-payment true --gas-price-tolerance 1
 ```
 
-**Write:** `set_greeting` — pass the new greeting as a session arg
+**Transfer tokens:** `transfer`
 ```bash
 casper-client put-transaction package \
     --node-address $NODE --chain-name $CHAIN \
     --secret-key $KEY \
     --contract-package-hash $PACKAGE \
-    --session-entry-point set_greeting \
-    --session-arg "greeting:string='GM Casper!'" \
+    --session-entry-point transfer \
+    --session-arg "token_id:u32='0'" \
+    --session-arg "recipient:address='account-hash-...'" \
+    --session-arg "amount:u256='100'" \
     --payment-amount 5000000000 \
     --standard-payment true --gas-price-tolerance 1
 ```
 
-**Call:** `greet` — returns "Hello, {greeting}!" and increments counter
+**Check balance:** `balance_of`
 ```bash
 casper-client put-transaction package \
     --node-address $NODE --chain-name $CHAIN \
     --secret-key $KEY \
     --contract-package-hash $PACKAGE \
-    --session-entry-point greet \
+    --session-entry-point balance_of \
+    --session-arg "token_id:u32='0'" \
+    --session-arg "owner:address='account-hash-...'" \
     --payment-amount 5000000000 \
     --standard-payment true --gas-price-tolerance 1
 ```

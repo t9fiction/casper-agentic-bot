@@ -25,10 +25,6 @@ class MonitorRequest(BaseModel):
     min_amount_cspr: float = 0
 
 
-class MonitorRemoveRequest(BaseModel):
-    monitor_id: str
-
-
 @app.on_event("startup")
 async def startup():
     asyncio.create_task(monitor_service.run())
@@ -42,6 +38,11 @@ async def shutdown():
 @app.get("/")
 async def index():
     return FileResponse(Path(__file__).parent / "public" / "index.html")
+
+
+@app.get("/monitor")
+async def monitor_page():
+    return FileResponse(Path(__file__).parent / "public" / "monitor.html")
 
 
 @app.post("/api/chat")

@@ -1,9 +1,20 @@
-import json, os, subprocess
+import json, os, subprocess, tempfile
 from pathlib import Path
 from langchain_core.tools import tool
 from .mcp_client import list_tools, call_tool
 
 _TOOLS_DESCRIPTION_CACHE = None
+
+
+def _get_secret_key_path() -> str:
+    """Write SECRET_KEY env var content to a temp file and return its path."""
+    key_value = os.getenv("SECRET_KEY")
+    if not key_value:
+        return ""
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False)
+    tmp.write(key_value)
+    tmp.close()
+    return tmp.name
 
 
 async def _get_tools_description():
@@ -24,6 +35,10 @@ async def _get_tools_description():
         lines.append("")
         lines.append("  - analyze_account: Get detailed account info including biggest transactions")
         lines.append("    args: account_hash (string)")
+        lines.append("")
+        lines.append("  - call_contract_entry_point: Call an entry point on the deployed Token Factory contract")
+        lines.append("    args: entry_point (string), session_args (dict of arg_name:value)")
+        lines.append("    Available entry points: deploy_token(name, symbol, decimals, total_supply), transfer(token_id, recipient, amount), balance_of(token_id, owner), token_info(token_id), total_tokens(), mint(token_id, recipient, amount)")
         _TOOLS_DESCRIPTION_CACHE = "\n".join(lines)
     return _TOOLS_DESCRIPTION_CACHE
 
@@ -57,9 +72,9 @@ async def send_cspr_transfer(recipient: str, amount_in_cspr: float, transfer_id:
         amount_in_cspr: Amount of CSPR to send (e.g. 5.5 for 5.5 CSPR)
         transfer_id: Optional user-defined identifier (uint64)
     """
-    secret_key = os.getenv("SECRET_KEY_PATH", "secret_key.pem")
-    if not Path(secret_key).exists():
-        return "Error: Secret key file not found. Configure SECRET_KEY_PATH."
+    secret_key_path = _get_secret_key_path()
+    if not secret_key_path:
+        return "Error: Secret key not found. Set the SECRET_KEY environment variable to your PEM key content."
 
     node = os.getenv("CASPER_NODE", "http://65.109.115.124:7777")
     chain = os.getenv("CASPER_NETWORK", "casper-test")
@@ -70,7 +85,7 @@ async def send_cspr_transfer(recipient: str, amount_in_cspr: float, transfer_id:
         "casper-client", "put-transaction", "transfer",
         "--node-address", node,
         "--chain-name", chain,
-        "--secret-key", secret_key,
+        "--secret-key", secret_key_path,
         "--target", recipient,
         "--transfer-amount", str(amount_motes),
         "--payment-amount", "1000000000",
@@ -97,6 +112,91 @@ async def send_cspr_transfer(recipient: str, amount_in_cspr: float, transfer_id:
         return "Error: casper-client not found. Install it first."
     except Exception as e:
         return f"Transfer failed: {str(e)}"
+    finally:
+        if os.environ.get("SECRET_KEY"):
+            try:
+                os.unlink(secret_key_path)
+            except OSError:
+                pass
+
+
+@tool
+async def call_contract_entry_point(entry_point: str, session_args: dict = None):
+    """Call an entry point on the deployed Token Factory smart contract.
+
+    Use this when the user wants to deploy tokens, check balances,
+    transfer tokens, mint tokens, or query token info on-chain.
+    The Token Factory manages multiple tokens with metadata.
+
+    Args:
+        entry_point: The entry point name (e.g. deploy_token, transfer, balance_of, token_info, total_tokens, mint)
+        session_args: Named arguments as a dict (e.g. {"name": "MyToken", "symbol": "MTK", "decimals": 8, "total_supply": "1000000"})
+    """
+    if session_args is None:
+        session_args = {}
+
+    secret_key_path = _get_secret_key_path()
+    if not secret_key_path:
+        return "Error: Secret key not found. Set the SECRET_KEY environment variable to your PEM key content."
+
+    node = os.getenv("CASPER_NODE", "http://65.109.115.124:7777")
+    chain = os.getenv("CASPER_NETWORK", "casper-test")
+    package_hash = os.getenv("CONTRACT_PACKAGE_HASH", "")
+    if not package_hash:
+        return "Error: CONTRACT_PACKAGE_HASH not configured. Deploy the contract first."
+
+    cmd = [
+        "casper-client", "put-transaction", "package",
+        "--node-address", node,
+        "--chain-name", chain,
+        "--secret-key", secret_key_path,
+        "--contract-package-hash", package_hash,
+        "--session-entry-point", entry_point,
+        "--payment-amount", "5000000000",
+        "--standard-payment", "true",
+        "--gas-price-tolerance", "1",
+    ]
+
+    for arg_name, arg_value in session_args.items():
+        if isinstance(arg_value, bool):
+            arg_str = f"{arg_name}:bool='{str(arg_value).lower()}'"
+        elif isinstance(arg_value, int):
+            arg_str = f"{arg_name}:u64='{arg_value}'"
+        elif isinstance(arg_value, str):
+            arg_str = f"{arg_name}:string='{arg_value}'"
+        else:
+            arg_str = f"{arg_name}:string='{arg_value}'"
+        cmd.extend(["--session-arg", arg_str])
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if result.returncode != 0:
+            return f"Contract call failed: {result.stderr.strip() or result.stdout.strip()}"
+        data = json.loads(result.stdout)
+        tx_hash = data.get("result", {}).get("transaction_hash", {})
+        if isinstance(tx_hash, dict):
+            tx_hash = tx_hash.get("Version1", str(tx_hash))
+        return (
+            f"Contract call submitted successfully!\n"
+            f"Entry point: {entry_point}\n"
+            f"Transaction hash: {tx_hash}\n"
+            f"Args: {session_args}\n"
+            f"Check result: casper-client get-transaction --node-address {node} {tx_hash}"
+        )
+    except subprocess.TimeoutExpired:
+        return "Contract call timed out after 120 seconds."
+    except json.JSONDecodeError:
+        return f"Contract call submitted but could not parse response: {result.stdout[:500]}"
+    except FileNotFoundError:
+        return "Error: casper-client not found. Install it first."
+    except Exception as e:
+        return f"Contract call failed: {str(e)}"
+    finally:
+        if os.environ.get("SECRET_KEY"):
+            try:
+                os.unlink(secret_key_path)
+            except OSError:
+                pass
 
 
 @tool

@@ -1,2 +1,2 @@
 [[contracts]]
-fqn = "greeter::Greeter"
+fqn = "token_factory::TokenFactory"
