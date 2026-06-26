@@ -33,7 +33,13 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 | `src/tools.py` | LangChain tool: query_casper_blockchain (wraps MCP call_tool) |
 | `src/mcp_client.py` | Async MCP client (streamable_http to hosted MCP) |
 | `src/public/index.html` | Dark-themed chat UI |
-| `smart-contract/src/lib.rs` | Odra Greeter contract (deployed on Testnet) |
+| `smart-contract/src/greeter.rs` | Odra Greeter contract module |
+| `smart-contract/src/lib.rs` | Crate root (no_std, extern alloc, pub mod greeter) |
+| `smart-contract/Odra.toml` | Contract definition (greeter::Greeter) |
+| `smart-contract/bin/build_contract.rs` | Wasm build binary target |
+| `smart-contract/build.rs` | Odra build script |
+| `smart-contract/.cargo/config.toml` | Wasm target-cpu + allow-undefined linker flag |
+| `smart-contract/rust-toolchain` | Nightly toolchain pin |
 | `AGENTS.md` | This file — project context for resume support |
 
 ## Current State
@@ -42,11 +48,14 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 - [x] LangGraph agent with MCP tool routing
 - [x] Python MCP client (streamable_http → mcp.testnet.cspr.cloud)
 - [x] Web chat UI
-- [x] Smart contract code (Odra Greeter)
-- [ ] Set up .env with actual API keys
+- [x] Smart contract code (Odra Greeter) + wasm binary builds
+- [x] .env configured with API keys
+- [x] langgraph in requirements.txt
+- [x] secret_key.pem + target/ gitignored
+- [x] Pushed to GitHub (github.com/t9fiction/casper-agentic-bot)
 - [ ] Deploy smart contract to Casper Testnet
 - [ ] Record demo video
-- [ ] Push to GitHub
+- [ ] Submit on DoraHacks
 
 ## How to Run
 ```bash
