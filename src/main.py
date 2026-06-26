@@ -1,10 +1,13 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from .agent import run_agent
+
+load_dotenv()
 
 app = FastAPI(title="Casper Agentic Bot")
 
