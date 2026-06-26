@@ -16,62 +16,90 @@
     }
     header {
       background: linear-gradient(135deg, #1a1a2e, #16213e);
-      padding: 16px 24px;
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       gap: 12px;
       border-bottom: 1px solid #2a2a4a;
     }
-    header h1 { font-size: 20px; font-weight: 600; color: #fff; }
-    header .badge {
-      background: #e63946; color: #fff; font-size: 11px;
-      padding: 2px 8px; border-radius: 10px; font-weight: 600;
+    header h1 { font-size: 18px; font-weight: 600; color: #fff; }
+    header .badge { background: #e63946; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    header .net-badge { background: #2a2a4a; color: #aaa; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+    .tabs { display: flex; margin-left: auto; gap: 4px; }
+    .tabs button {
+      background: transparent; border: 1px solid #333; color: #888; padding: 6px 14px;
+      border-radius: 6px; font-size: 12px; cursor: pointer; transition: all .2s;
     }
-    header .net-badge {
-      background: #2a2a4a; color: #aaa; font-size: 11px;
-      padding: 2px 8px; border-radius: 10px; margin-left: auto;
+    .tabs button.active { background: #4a4a8a; border-color: #4a4a8a; color: #fff; }
+    .tabs button:hover:not(.active) { border-color: #4a4a8a; color: #ccc; }
+    .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .tab-content.active { display: flex; }
+    #monitorTab {
+      padding: 20px; overflow-y: auto; gap: 16px;
     }
-    .chat-container {
-      flex: 1; overflow-y: auto; padding: 20px;
-      display: flex; flex-direction: column; gap: 12px;
+    #monitorTab h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    #monitorTab p { color: #888; font-size: 13px; margin-bottom: 16px; }
+    .monitor-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .monitor-form input, .monitor-form button {
+      background: #1a1a30; border: 1px solid #333; border-radius: 8px;
+      padding: 10px 14px; color: #e0e0e0; font-size: 13px;
     }
-    .message {
-      max-width: 80%; padding: 12px 16px;
-      border-radius: 12px; line-height: 1.5; font-size: 14px; white-space: pre-wrap;
+    .monitor-form input:focus { border-color: #4a4a8a; outline: none; }
+    .monitor-form button {
+      background: #4a4a8a; color: #fff; border: none; cursor: pointer; font-weight: 600;
     }
-    .message.user {
-      background: #1a3a5c; align-self: flex-end; border-bottom-right-radius: 4px;
+    .monitor-form button:hover { background: #5a5aaa; }
+    .monitor-item {
+      background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 10px;
+      padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
     }
-    .message.bot {
-      background: #1e1e32; align-self: flex-start; border-bottom-left-radius: 4px;
+    .monitor-item .info { flex: 1; }
+    .monitor-item .info .addr { font-size: 13px; color: #4af; word-break: break-all; }
+    .monitor-item .info .label { font-size: 11px; color: #888; }
+    .monitor-item .remove-btn {
+      background: transparent; border: 1px solid #e63946; color: #e63946;
+      border-radius: 6px; padding: 6px 12px; font-size: 11px; cursor: pointer;
     }
+    .monitor-item .remove-btn:hover { background: #e63946; color: #fff; }
+    .alert-box {
+      background: #1a2a1a; border: 1px solid #2a4a2a; border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;
+    }
+    .alert-box .time { color: #888; font-size: 11px; }
+    .chat-container { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+    .message { max-width: 85%; padding: 10px 14px; border-radius: 10px; line-height: 1.5; font-size: 13px; white-space: pre-wrap; }
+    .message.user { background: #1a3a5c; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .message.bot { background: #1e1e32; align-self: flex-start; border-bottom-left-radius: 4px; }
     .message.bot.loading { opacity: 0.6; }
-    .input-area {
-      padding: 16px 20px; background: #12122a;
-      border-top: 1px solid #2a2a4a; display: flex; gap: 10px;
-    }
+    .message code { background: #2a2a4a; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+    .message .tx-link { color: #4af; text-decoration: none; }
+    .message .tx-link:hover { text-decoration: underline; }
+    .input-area { padding: 12px 20px; background: #12122a; border-top: 1px solid #2a2a4a; display: flex; gap: 10px; }
     .input-area input {
-      flex: 1; background: #1a1a30; border: 1px solid #333;
-      border-radius: 8px; padding: 12px 16px; color: #e0e0e0;
-      font-size: 14px; outline: none;
+      flex: 1; background: #1a1a30; border: 1px solid #333; border-radius: 8px;
+      padding: 10px 14px; color: #e0e0e0; font-size: 13px; outline: none;
     }
     .input-area input:focus { border-color: #4a4a8a; }
     .input-area button {
       background: #4a4a8a; color: #fff; border: none; border-radius: 8px;
-      padding: 12px 24px; font-size: 14px; cursor: pointer; font-weight: 600;
-      transition: background 0.2s;
+      padding: 10px 20px; font-size: 13px; cursor: pointer; font-weight: 600;
     }
     .input-area button:hover { background: #5a5aaa; }
     .input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
     .suggestions {
-      display: flex; gap: 8px; padding: 0 20px 16px; flex-wrap: wrap;
+      display: flex; gap: 6px; padding: 0 20px 12px; flex-wrap: wrap;
     }
     .suggestions button {
-      background: #1e1e32; border: 1px solid #333; border-radius: 16px;
-      padding: 6px 14px; color: #aaa; font-size: 12px; cursor: pointer;
-      transition: all 0.2s;
+      background: #1e1e32; border: 1px solid #333; border-radius: 14px;
+      padding: 5px 12px; color: #aaa; font-size: 11px; cursor: pointer; transition: all .2s;
     }
     .suggestions button:hover { border-color: #4a4a8a; color: #fff; }
+    .empty-state { text-align: center; color: #555; padding: 40px 20px; }
+    .empty-state h3 { font-size: 16px; margin-bottom: 8px; }
+    .empty-state p { font-size: 13px; }
+    .badge-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+    .badge-dot.green { background: #4caf50; }
+    .badge-dot.red { background: #e63946; }
   </style>
 </head>
 <body>
@@ -79,33 +107,66 @@
     <h1>Casper Agentic Bot</h1>
     <span class="badge">AI</span>
     <span class="net-badge" id="networkBadge">testnet</span>
+    <div class="tabs">
+      <button class="active" onclick="switchTab('chat')">Chat</button>
+      <button onclick="switchTab('monitor')">Monitor</button>
+    </div>
   </header>
 
-  <div class="chat-container" id="chatContainer">
-    <div class="message bot">
-      Hi! I'm an AI agent that can query the Casper blockchain. Try asking:
+  <!-- Chat Tab -->
+  <div class="tab-content active" id="chatTab">
+    <div class="chat-container" id="chatContainer">
+      <div class="message bot">
+        Hi! I'm an AI agent that can query the Casper blockchain, send transfers, and analyze accounts.
 
-      • "What's the current network status?"
-      • "Show me the latest 5 blocks"
-      • "Get account info for [account hash]"
-      • "List active validators"
-      • "What's the total CSPR supply?"
+        Try asking:
+        • "What's the network status?"
+        • "Show me the latest 5 blocks"
+        • "Send 5 CSPR to account-hash-..."
+        • "Analyze account account-hash-..."
+        • "Monitor account-hash-... for big transactions"
+      </div>
+    </div>
+    <div class="suggestions" id="suggestions">
+      <button onclick="sendSuggestion('What is the current network status?')">Network Status</button>
+      <button onclick="sendSuggestion('Show me the latest 5 blocks')">Latest Blocks</button>
+      <button onclick="sendSuggestion('List the validators')">Validators</button>
+      <button onclick="sendSuggestion('What is the total CSPR supply?')">Supply</button>
+      <button onclick="sendSuggestion('Explain how CSPR transfers work')">How transfers work</button>
+    </div>
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="Ask about Casper, send CSPR, analyze accounts..." autofocus />
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
   </div>
 
-  <div class="suggestions" id="suggestions">
-    <button onclick="sendSuggestion('What is the current network status?')">Network Status</button>
-    <button onclick="sendSuggestion('Show me the latest 5 blocks')">Latest Blocks</button>
-    <button onclick="sendSuggestion('List the validators')">Validators</button>
-    <button onclick="sendSuggestion('What is the total CSPR supply?')">CSPR Supply</button>
-  </div>
-
-  <div class="input-area">
-    <input type="text" id="messageInput" placeholder="Ask about the Casper blockchain..." autofocus />
-    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  <!-- Monitor Tab -->
+  <div class="tab-content" id="monitorTab">
+    <h2>Account Monitor</h2>
+    <p>Watch Casper accounts for activity. When new transactions are detected, alerts appear below.</p>
+    <div class="monitor-form">
+      <input type="text" id="monitorAccount" placeholder="account-hash-..." style="flex:2;min-width:200px" />
+      <input type="text" id="monitorLabel" placeholder="Label (e.g. Whale 1)" style="flex:1;min-width:120px" />
+      <input type="number" id="monitorMinAmount" placeholder="Min CSPR" style="width:100px" value="0" />
+      <button onclick="addMonitor()">Track Account</button>
+    </div>
+    <div id="monitorList"></div>
+    <div id="monitorAlerts"></div>
   </div>
 
   <script>
+    let activeMonitors = [];
+    let alerts = [];
+
+    async function switchTab(name) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      document.getElementById(name + 'Tab').classList.add('active');
+      event.target.classList.add('active');
+      if (name === 'monitor') { loadMonitors(); startPolling(); }
+      else { stopPolling(); }
+    }
+
     const chatContainer = document.getElementById('chatContainer');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -147,16 +208,17 @@
         });
         const data = await res.json();
         removeLoading();
-        if (data.error) {
-          addMessage('Error: ' + data.error, 'bot');
-        } else {
-          addMessage(data.reply, 'bot');
-        }
+        if (data.error) addMessage('Error: ' + data.error, 'bot');
+        else addMessage(data.reply, 'bot');
       } catch {
         removeLoading();
         addMessage('Error: Could not reach the server.', 'bot');
       }
       sendBtn.disabled = false;
+      // If user mentioned monitor, switch to monitor tab
+      if (msg.toLowerCase().includes('monitor') || msg.toLowerCase().includes('watch') || msg.toLowerCase().includes('track')) {
+        setTimeout(() => switchTab('monitor'), 500);
+      }
     }
 
     function sendSuggestion(text) {
@@ -167,6 +229,89 @@
     messageInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') sendMessage();
     });
+
+    // Monitor
+    async function loadMonitors() {
+      try {
+        const res = await fetch('/api/monitors');
+        const data = await res.json();
+        activeMonitors = data.monitors || [];
+        renderMonitors();
+      } catch {}
+    }
+
+    function renderMonitors() {
+      const list = document.getElementById('monitorList');
+      if (activeMonitors.length === 0) {
+        list.innerHTML = '<div class="empty-state"><h3>No accounts being monitored</h3><p>Add an account hash above to start tracking activity.</p></div>';
+        return;
+      }
+      list.innerHTML = activeMonitors.map(m => `
+        <div class="monitor-item">
+          <div class="info">
+            <div class="addr">${m.account}</div>
+            <div class="label">${m.label} &middot; Min: ${m.min_cspr} CSPR ${m.active ? '<span class="badge-dot green"></span>Active' : '<span class="badge-dot red"></span>Inactive'}</div>
+          </div>
+          <button class="remove-btn" onclick="removeMonitor('${m.id}')">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    async function addMonitor() {
+      const account = document.getElementById('monitorAccount').value.trim();
+      const label = document.getElementById('monitorLabel').value.trim();
+      const min = parseFloat(document.getElementById('monitorMinAmount').value) || 0;
+      if (!account) return alert('Enter an account hash');
+      try {
+        await fetch('/api/monitors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account_hash: account, label, min_amount_cspr: min }),
+        });
+        document.getElementById('monitorAccount').value = '';
+        document.getElementById('monitorLabel').value = '';
+        await loadMonitors();
+      } catch {}
+    }
+
+    async function removeMonitor(id) {
+      try {
+        await fetch('/api/monitors/' + id, { method: 'DELETE' });
+        await loadMonitors();
+      } catch {}
+    }
+
+    let pollTimer = null;
+    function startPolling() {
+      stopPolling();
+      pollTimer = setInterval(fetchAlerts, 5000);
+      fetchAlerts();
+    }
+    function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+    async function fetchAlerts() {
+      try {
+        const res = await fetch('/api/monitors/alerts');
+        const data = await res.json();
+        if (data.alerts && data.alerts.length > 0) {
+          alerts = [...data.alerts, ...alerts].slice(0, 50);
+          renderAlerts();
+        }
+      } catch {}
+    }
+
+    function renderAlerts() {
+      const container = document.getElementById('monitorAlerts');
+      if (alerts.length === 0) return;
+      container.innerHTML = '<h3 style="font-size:14px;font-weight:600;margin:16px 0 8px;color:#4caf50">Recent Alerts</h3>' +
+        alerts.map(a => `
+          <div class="alert-box">
+            <div><strong>${a.label || a.account}</strong></div>
+            <div style="font-size:12px;color:#aaa;margin-top:2px">${a.data || 'Activity detected'}</div>
+            <div class="time">${new Date(a.timestamp).toLocaleTimeString()}</div>
+          </div>
+        `).join('');
+    }
   </script>
 </body>
 </html>

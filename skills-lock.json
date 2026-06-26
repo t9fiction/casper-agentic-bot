@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "casper-testnet-deploy": {
+      "source": "TerexitariusStomp/casper-testnet-deploy",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "506e1be28ad50c3e3b838baccea526c8feda4fe72a3c1ee8ef916337bed4c985"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "eval_name": "call-contract-entrypoints",
+  "config": "with_skill",
+  "assertions": [
+    {
+      "text": "uses-package-subcommand",
+      "passed": true,
+      "evidence": "Contains 'put-transaction package': True"
+    },
+    {
+      "text": "has-correct-package-hash-format",
+      "passed": true,
+      "evidence": "Contains 'hash-': True"
+    },
+    {
+      "text": "get-greeting-entry-point",
+      "passed": true,
+      "evidence": "Contains 'get_greeting': True"
+    },
+    {
+      "text": "set-greeting-entry-point",
+      "passed": true,
+      "evidence": "Contains 'set_greeting': True"
+    },
+    {
+      "text": "greet-entry-point",
+      "passed": true,
+      "evidence": "Contains 'greet': True"
+    },
+    {
+      "text": "set-greeting-arg-format",
+      "passed": true,
+      "evidence": "Contains 'session-arg': True"
+    },
+    {
+      "text": "uses-contract-package-hash-option",
+      "passed": true,
+      "evidence": "Contains '--contract-package-hash': True"
+    }
+  ]
+}

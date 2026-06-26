@@ -1,0 +1,23 @@
+{
+  "skill_name": "odra-casper-testnet-deploy",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I built an Odra Greeter contract (smart-contract/src/greeter.rs) and ran `cargo odra build`. The wasm is at smart-contract/wasm/Greeter.wasm. I have a secp256r1 secret key at secret_key.pem and my node is 65.109.115.124:7777. Walk me through deploying it to Casper Testnet step by step, including all the CLI commands I need.",
+      "expected_output": "Complete deployment instructions with all required Odra args (odra_cfg_package_hash_key_name, odra_cfg_allow_key_override, odra_cfg_is_upgradable, odra_cfg_is_upgrade, greeting init param), using put-transaction session --install-upgrade, with 500 CSPR payment.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I'm trying to deploy my Odra contract to Casper Testnet but getting this error: 'User error: 64658'. My command is:\n\n```\ncasper-client put-transaction session \\\n  --node-address http://65.109.115.124:7777 \\\n  --chain-name casper-test \\\n  --secret-key secret_key.pem \\\n  --wasm-path Greeter.wasm \\\n  --payment-amount 100000000000 \\\n  --standard-payment true --gas-price-tolerance 1\n```\n\nWhat's wrong and how do I fix it?",
+      "expected_output": "Identify error 64658 as MissingArg (Odra discriminant 122), explain that Odra's generated call() expects named args (odra_cfg_package_hash_key_name, odra_cfg_allow_key_override, odra_cfg_is_upgradable, odra_cfg_is_upgrade, plus greeting), provide corrected command with all required args and proper payment (500 CSPR).",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "My Greeter contract is already deployed on Casper Testnet. The package hash is contract-package-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4. I want to:\n\n1. Call get_greeting to read the current greeting\n2. Call set_greeting to change it to 'GM Casper!'\n3. Call greet to get a personalized message\n\nGive me the CLI commands for each.",
+      "expected_output": "Commands using put-transaction package with --contract-package-hash hash-<hex>, --session-entry-point for each call, proper session-arg format for set_greeting, 5 CSPR payment (5000000000 motes), standard-payment true, gas-price-tolerance 1.",
+      "files": []
+    }
+  ]
+}

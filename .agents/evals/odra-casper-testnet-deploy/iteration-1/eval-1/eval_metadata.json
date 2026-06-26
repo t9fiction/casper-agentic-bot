@@ -1,0 +1,37 @@
+{
+  "eval_id": 1,
+  "eval_name": "troubleshoot-error-64658",
+  "prompt": "I'm trying to deploy my Odra contract to Casper Testnet but getting this error: 'User error: 64658'. My command is:\n\n```\ncasper-client put-transaction session \\\n  --node-address http://65.109.115.124:7777 \\\n  --chain-name casper-test \\\n  --secret-key secret_key.pem \\\n  --wasm-path Greeter.wasm \\\n  --payment-amount 100000000000 \\\n  --standard-payment true --gas-price-tolerance 1\n```\n\nWhat's wrong and how do I fix it?",
+  "assertions": [
+    {
+      "name": "identifies-error-64658",
+      "text": "Identifies 64658 as MissingArg (Odra discriminant 122)",
+      "type": "text_contains",
+      "value": "MissingArg"
+    },
+    {
+      "name": "mentions-odra-call-function",
+      "text": "Explains Odra's generated call() function needs named args",
+      "type": "text_contains",
+      "value": "call()"
+    },
+    {
+      "name": "suggests-all-odra-args",
+      "text": "Suggests adding all five Odra cfg args",
+      "type": "text_contains",
+      "value": "odra_cfg_package_hash_key_name"
+    },
+    {
+      "name": "suggests-increase-payment",
+      "text": "Suggests increasing payment to 500 CSPR",
+      "type": "text_contains",
+      "value": "500000000000"
+    },
+    {
+      "name": "provides-corrected-command",
+      "text": "Provides a corrected CLI command with all fixes",
+      "type": "text_contains",
+      "value": "put-transaction"
+    }
+  ]
+}

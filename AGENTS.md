@@ -41,19 +41,25 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 | `smart-contract/.cargo/config.toml` | Wasm target-cpu + allow-undefined linker flag |
 | `smart-contract/rust-toolchain` | Nightly toolchain pin |
 | `AGENTS.md` | This file — project context for resume support |
+| `src/transfers.py` | CSPR transfer tool (subprocess to casper-client) |
+| `src/account_analyzer.py` | Account analysis (biggest tx, details) |
+| `src/monitor.py` | Background account monitor (30s poll loop) |
 
 ## Current State
 - [x] Project scaffolding (Python + FastAPI + LangChain)
 - [x] FastAPI server with /api/chat endpoint
 - [x] LangGraph agent with MCP tool routing
 - [x] Python MCP client (streamable_http → mcp.testnet.cspr.cloud)
-- [x] Web chat UI
+- [x] Web chat UI (chat + monitor tabs)
 - [x] Smart contract code (Odra Greeter) + wasm binary builds
 - [x] .env configured with API keys
 - [x] langgraph in requirements.txt
 - [x] secret_key.pem + target/ gitignored
 - [x] Pushed to GitHub (github.com/t9fiction/casper-agentic-bot)
 - [x] Deploy smart contract to Casper Testnet 🎉
+- [x] CSPR transfer tool (agent signs + submits transactions)
+- [x] Account analysis tool (account details, biggest tx scanning)
+- [x] Account monitoring feature (background watcher, alerts via UI)
 - [ ] Record demo video
 - [ ] Submit on DoraHacks
 

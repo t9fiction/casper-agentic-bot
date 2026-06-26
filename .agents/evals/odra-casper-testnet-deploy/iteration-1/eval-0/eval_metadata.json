@@ -1,0 +1,73 @@
+{
+  "eval_id": 0,
+  "eval_name": "deploy-odra-greeter",
+  "prompt": "I built an Odra Greeter contract (smart-contract/src/greeter.rs) and ran `cargo odra build`. The wasm is at smart-contract/wasm/Greeter.wasm. I have a secp256r1 secret key at secret_key.pem and my node is 65.109.115.124:7777. Walk me through deploying it to Casper Testnet step by step, including all the CLI commands I need.",
+  "assertions": [
+    {
+      "name": "uses-put-transaction-session",
+      "text": "The response uses put-transaction session (not put-deploy)",
+      "type": "text_contains",
+      "value": "put-transaction session"
+    },
+    {
+      "name": "has-install-upgrade-flag",
+      "text": "The response includes the --install-upgrade flag",
+      "type": "text_contains",
+      "value": "--install-upgrade"
+    },
+    {
+      "name": "has-odra-cfg-package-hash-key-name",
+      "text": "The response includes odra_cfg_package_hash_key_name arg",
+      "type": "text_contains",
+      "value": "odra_cfg_package_hash_key_name"
+    },
+    {
+      "name": "has-odra-cfg-allow-key-override",
+      "text": "The response includes odra_cfg_allow_key_override arg",
+      "type": "text_contains",
+      "value": "odra_cfg_allow_key_override"
+    },
+    {
+      "name": "has-odra-cfg-is-upgradable",
+      "text": "The response includes odra_cfg_is_upgradable arg",
+      "type": "text_contains",
+      "value": "odra_cfg_is_upgradable"
+    },
+    {
+      "name": "has-odra-cfg-is-upgrade",
+      "text": "The response includes odra_cfg_is_upgrade arg",
+      "type": "text_contains",
+      "value": "odra_cfg_is_upgrade"
+    },
+    {
+      "name": "has-init-param-greeting",
+      "text": "The response includes the greeting init param",
+      "type": "text_contains",
+      "value": "greeting"
+    },
+    {
+      "name": "payment-is-500-cspr",
+      "text": "The response uses 500000000000 motes (500 CSPR) for payment",
+      "type": "text_contains",
+      "value": "500000000000"
+    },
+    {
+      "name": "includes-get-transaction-verification",
+      "text": "The response tells user to check deploy status with get-transaction",
+      "type": "text_contains",
+      "value": "get-transaction"
+    },
+    {
+      "name": "uses-standard-payment",
+      "text": "The response includes --standard-payment true",
+      "type": "text_contains",
+      "value": "--standard-payment"
+    },
+    {
+      "name": "uses-gas-price-tolerance",
+      "text": "The response includes --gas-price-tolerance",
+      "type": "text_contains",
+      "value": "--gas-price-tolerance"
+    }
+  ]
+}

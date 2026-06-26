@@ -1,0 +1,31 @@
+{
+  "eval_name": "troubleshoot-error-64658",
+  "config": "without_skill",
+  "assertions": [
+    {
+      "text": "identifies-error-64658",
+      "passed": true,
+      "evidence": "Contains 'MissingArg': True"
+    },
+    {
+      "text": "mentions-odra-call-function",
+      "passed": true,
+      "evidence": "Contains 'call()': True"
+    },
+    {
+      "text": "suggests-all-odra-args",
+      "passed": true,
+      "evidence": "Contains 'odra_cfg_package_hash_key_name': True"
+    },
+    {
+      "text": "suggests-increase-payment",
+      "passed": true,
+      "evidence": "Contains '500000000000': True"
+    },
+    {
+      "text": "provides-corrected-command",
+      "passed": true,
+      "evidence": "Contains 'put-transaction': True"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "eval_id": 2,
+  "eval_name": "call-contract-entrypoints",
+  "prompt": "My Greeter contract is already deployed on Casper Testnet. The package hash is contract-package-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4. I want to:\n\n1. Call get_greeting to read the current greeting\n2. Call set_greeting to change it to 'GM Casper!'\n3. Call greet to get a personalized message\n\nGive me the CLI commands for each.",
+  "assertions": [
+    {
+      "name": "uses-package-subcommand",
+      "text": "Uses put-transaction package (not session) for entry point calls",
+      "type": "text_contains",
+      "value": "put-transaction package"
+    },
+    {
+      "name": "has-correct-package-hash-format",
+      "text": "Uses hash- prefix for the contract package hash",
+      "type": "text_contains",
+      "value": "hash-"
+    },
+    {
+      "name": "get-greeting-entry-point",
+      "text": "Has correct get_greeting entry point call",
+      "type": "text_contains",
+      "value": "get_greeting"
+    },
+    {
+      "name": "set-greeting-entry-point",
+      "text": "Has correct set_greeting entry point call",
+      "type": "text_contains",
+      "value": "set_greeting"
+    },
+    {
+      "name": "greet-entry-point",
+      "text": "Has correct greet entry point call",
+      "type": "text_contains",
+      "value": "greet"
+    },
+    {
+      "name": "set-greeting-arg-format",
+      "text": "Has correct session-arg format for string argument",
+      "type": "text_contains",
+      "value": "session-arg"
+    },
+    {
+      "name": "uses-contract-package-hash-option",
+      "text": "Uses --contract-package-hash option (not deprecated flags)",
+      "type": "text_contains",
+      "value": "--contract-package-hash"
+    }
+  ]
+}

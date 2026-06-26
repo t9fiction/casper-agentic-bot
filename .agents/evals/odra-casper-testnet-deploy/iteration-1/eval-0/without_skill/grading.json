@@ -1,0 +1,61 @@
+{
+  "eval_name": "deploy-odra-greeter",
+  "config": "without_skill",
+  "assertions": [
+    {
+      "text": "uses-put-transaction-session",
+      "passed": true,
+      "evidence": "Contains 'put-transaction session': True"
+    },
+    {
+      "text": "has-install-upgrade-flag",
+      "passed": true,
+      "evidence": "Contains '--install-upgrade': True"
+    },
+    {
+      "text": "has-odra-cfg-package-hash-key-name",
+      "passed": true,
+      "evidence": "Contains 'odra_cfg_package_hash_key_name': True"
+    },
+    {
+      "text": "has-odra-cfg-allow-key-override",
+      "passed": true,
+      "evidence": "Contains 'odra_cfg_allow_key_override': True"
+    },
+    {
+      "text": "has-odra-cfg-is-upgradable",
+      "passed": true,
+      "evidence": "Contains 'odra_cfg_is_upgradable': True"
+    },
+    {
+      "text": "has-odra-cfg-is-upgrade",
+      "passed": true,
+      "evidence": "Contains 'odra_cfg_is_upgrade': True"
+    },
+    {
+      "text": "has-init-param-greeting",
+      "passed": true,
+      "evidence": "Contains 'greeting': True"
+    },
+    {
+      "text": "payment-is-500-cspr",
+      "passed": true,
+      "evidence": "Contains '500000000000': True"
+    },
+    {
+      "text": "includes-get-transaction-verification",
+      "passed": true,
+      "evidence": "Contains 'get-transaction': True"
+    },
+    {
+      "text": "uses-standard-payment",
+      "passed": true,
+      "evidence": "Contains '--standard-payment': True"
+    },
+    {
+      "text": "uses-gas-price-tolerance",
+      "passed": true,
+      "evidence": "Contains '--gas-price-tolerance': True"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import os
+import os, asyncio
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from .agent import run_agent
+from .monitor import monitor_service
 
 load_dotenv()
 
@@ -16,6 +17,26 @@ NETWORK = os.getenv("CASPER_NETWORK", "testnet")
 
 class ChatRequest(BaseModel):
     message: str
+
+
+class MonitorRequest(BaseModel):
+    account_hash: str
+    label: str = ""
+    min_amount_cspr: float = 0
+
+
+class MonitorRemoveRequest(BaseModel):
+    monitor_id: str
+
+
+@app.on_event("startup")
+async def startup():
+    asyncio.create_task(monitor_service.run())
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    monitor_service.stop()
 
 
 @app.get("/")
@@ -37,3 +58,25 @@ async def chat(req: ChatRequest):
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "network": NETWORK}
+
+
+@app.get("/api/monitors")
+async def list_monitors():
+    return {"monitors": monitor_service.list_monitors()}
+
+
+@app.post("/api/monitors")
+async def add_monitor(req: MonitorRequest):
+    key = monitor_service.add_monitor(req.account_hash, req.label, req.min_amount_cspr)
+    return {"monitor_id": key, "status": "active"}
+
+
+@app.delete("/api/monitors/{monitor_id}")
+async def remove_monitor(monitor_id: str):
+    monitor_service.remove_monitor(monitor_id)
+    return {"status": "removed"}
+
+
+@app.get("/api/monitors/alerts")
+async def get_alerts():
+    return {"alerts": monitor_service.get_alerts(clear=True)}
