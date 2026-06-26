@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.env
+.vscode/
+smart-contract/target/
+smart-contract/node_modules/
+casper-client

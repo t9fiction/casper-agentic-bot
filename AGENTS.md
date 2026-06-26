@@ -75,11 +75,12 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 |---|---|
 | Network | Casper Testnet (casper-test) |
 | Deploy method | `put-transaction session` with `--install-upgrade` |
-| Contract Package Hash | `contract-package-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4` (old Greeter — needs redeploy for Token Factory) |
+| Contract Package Hash | `hash-5095fbfcbfa662ef13731dd0822317e100f2642230c2a35f0241e888eb8383eb` |
+| Contract Hash | `contract-c3b50a15995f97f424b8e4541499d03a80e0f2ba7b528edb07c9712e7dcc3354` |
 | Account Hash | `account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5` |
 | Node | `65.109.115.124:7777` |
-| Block Height | 8305683 (old) |
-| Deploy Cost (old) | ~231 CSPR (limit 500 CSPR) for Greeter (280KB wasm) |
+| Block Height | 8310310 |
+| Deploy Cost | 500 CSPR for Token Factory (300KB wasm) |
 
 ### Token Factory Entry Points
 | Entry Point | Args | Returns | Description |

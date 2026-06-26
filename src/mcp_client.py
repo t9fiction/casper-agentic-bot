@@ -1,12 +1,14 @@
 import os
+import httpx
 from contextlib import asynccontextmanager
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
-NETWORK = os.getenv("CASPER_NETWORK", "testnet")
+CHAIN_NAME = os.getenv("CASPER_NETWORK", "casper-test")
+_API_NETWORK = "mainnet" if CHAIN_NAME in ("casper", "mainnet") else "testnet"
 MCP_URL = (
     "https://mcp.cspr.cloud/mcp"
-    if NETWORK == "mainnet"
+    if _API_NETWORK == "mainnet"
     else "https://mcp.testnet.cspr.cloud/mcp"
 )
 
@@ -19,16 +21,17 @@ async def get_session():
 
     headers = {
         "X-CSPR-Cloud-Api-Key": api_key,
-        "X-Casper-Network": NETWORK,
+        "X-Casper-Network": _API_NETWORK,
     }
 
-    async with streamablehttp_client(
-        MCP_URL, headers=headers
-    ) as streams:
-        read, write, _ = streams
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            yield session
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
+        async with streamable_http_client(
+            MCP_URL, http_client=client
+        ) as streams:
+            read, write, _ = streams
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
 
 
 async def list_tools():

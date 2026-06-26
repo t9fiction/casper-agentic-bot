@@ -49,9 +49,9 @@ When a user asks to "make a token", "deploy a token", "create a token", etc:
 3. Report the token_id and transaction hash
 
 Examples:
-- "Network status?" -> query_casper_blockchain(tool_name="GetNetworkStatus")
-- "Latest blocks" -> query_casper_blockchain(tool_name="GetLatestBlocks", arguments={{"limit": 5}})
-- "Account 01abc..." -> query_casper_blockchain(tool_name="GetAccountInfo", arguments={{"account_hash": "01abc..."}})
+- "Network status?" -> query_casper_blockchain(tool_name="get_network_status")
+- "Latest blocks" -> query_casper_blockchain(tool_name="get_latest_blocks", arguments={{"page": 1, "pageSize": 5}})
+- "Account 01abc..." -> query_casper_blockchain(tool_name="get_account_info", arguments={{"accountIdentifier": "01abc..."}})
 - "Send 5 CSPR to account-hash-xxx" -> send_cspr_transfer(recipient="account-hash-xxx", amount_in_cspr=5)
 - "Analyze this account account-hash-xxx" -> analyze_account(account_hash="account-hash-xxx")
 - "Deploy a token called MyCoin with symbol MYC and supply 1 million" -> call_contract_entry_point(entry_point="deploy_token", session_args={{"name": "MyCoin", "symbol": "MYC", "decimals": 8, "total_supply": "1000000"}})

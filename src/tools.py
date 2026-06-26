@@ -157,8 +157,20 @@ async def call_contract_entry_point(entry_point: str, session_args: dict = None)
         "--gas-price-tolerance", "1",
     ]
 
+    _ARG_TYPE_OVERRIDES = {
+        "decimals": "u8",
+        "total_supply": "u256",
+        "token_id": "u32",
+        "amount": "u256",
+        "owner": "key",
+        "recipient": "key",
+    }
+
     for arg_name, arg_value in session_args.items():
-        if isinstance(arg_value, bool):
+        cl_type = _ARG_TYPE_OVERRIDES.get(arg_name)
+        if cl_type:
+            arg_str = f"{arg_name}:{cl_type}='{arg_value}'"
+        elif isinstance(arg_value, bool):
             arg_str = f"{arg_name}:bool='{str(arg_value).lower()}'"
         elif isinstance(arg_value, int):
             arg_str = f"{arg_name}:u64='{arg_value}'"
