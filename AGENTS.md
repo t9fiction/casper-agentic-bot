@@ -87,6 +87,20 @@ uvicorn src.main:app --reload
 # Open http://localhost:8000
 ```
 
+## How to Verify Deployed Contract
+```bash
+# Query account named keys to confirm contract package exists
+casper-client query-global-state \
+    --node-address http://65.109.115.124:7777 \
+    --key account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5 \
+    -q "greeter"
+
+# Query contract entity to see entry points
+casper-client query-global-state \
+    --node-address http://65.109.115.124:7777 \
+    --key hash-e294029ed8d748f31ab36690e6f68bc777cef9094cfbb0a91fd8c3c41745ba72
+```
+
 ## Decisions Made
 - **Python + LangGraph** over Node.js (user preference for LangChain ecosystem)
 - **Hosted Casper MCP Server** (no local node or Docker needed)
@@ -98,3 +112,11 @@ uvicorn src.main:app --reload
 ## Known Constraints
 - MCP write tools are stdio-only (disabled on hosted endpoint). For on-chain transactions, use the smart contract deployment separately.
 - CSPR.cloud API key required (free tier available).
+
+## Troubleshooting Deploy Errors
+| Error Code | Discriminant | Meaning | Fix |
+|---|---|---|---|
+| 64658 (0xFC92) | 122 | `MissingArg` — Odra's `call()` expects named args | Pass `odra_cfg_package_hash_key_name`, `odra_cfg_allow_key_override`, `odra_cfg_is_upgradable`, `odra_cfg_is_upgrade`, plus init args |
+| Out of gas | — | Wasm too large (280KB) for default payment | Increase `--payment-amount` (500 CSPR worked for ~231 CSPR consumed) |
+| 64641 (0xFC81) | 105 | `CannotOverrideKeys` — package hash key already exists | Set `odra_cfg_allow_key_override:bool='true'` |
+| -32602 | — | Invalid state query key format | Use `hash-` prefix for contracts (not `contract-`) in Casper 2.0 |
