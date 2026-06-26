@@ -1,6 +1,8 @@
 __pycache__/
 .venv/
 .env
-*.wasm
-smart-contract/secret_key.pem
+smart-contract/wasm/
 smart-contract/target/
+smart-contract/secret_key.pem
+smart-contract/.cargo/
+smart-contract/resources/

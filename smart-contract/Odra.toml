@@ -1,2 +1,2 @@
-[odra]
-backend = "casper"
+[[contracts]]
+fqn = "greeter::Greeter"
