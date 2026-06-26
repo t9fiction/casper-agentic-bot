@@ -1,6 +1,6 @@
 # Casper Agentic Bot
 
-**AI-powered chatbot** for the Casper blockchain — ask questions in plain English, get real on-chain data.
+**AI-powered chatbot** for the Casper blockchain — ask questions in plain English, send transfers, analyze accounts, and monitor whale activity. Built with LangGraph + GPT-4o-mini.
 
 Built for the **Casper Agentic Buildathon 2026** (Qualification Round).
 
@@ -10,6 +10,15 @@ Built for the **Casper Agentic Buildathon 2026** (Qualification Round).
 User:  "What's the current network status?"
 Bot:   Calls GetNetworkStatus → returns era, validator count, total stake, etc.
 
+User:  "Send 5 CSPR to account-hash-2bc76a..."
+Bot:   Signs + submits a native transfer via casper-client → returns tx hash
+
+User:  "Analyze account account-hash-2bc76a..."
+Bot:   Fetches balance, named keys, and scans recent blocks for activity
+
+User:  "Monitor this whale account for transactions above 1000 CSPR"
+Bot:   Adds account to background watcher, polls every 30s, alerts in Monitor tab
+
 User:  "Show me the latest 3 blocks"
 Bot:   Calls GetLatestBlocks → returns block hashes, heights, timestamps, proposers
 
@@ -17,15 +26,25 @@ User:  "Get account info for 01abc..."
 Bot:   Calls GetAccountInfo → returns balance, staking, delegation status
 ```
 
+## Features
+
+| Feature | Description |
+|---|---|
+| **Blockchain Queries** | 87+ MCP tools for on-chain data (blocks, accounts, validators, contracts, NFTs, DeFi) |
+| **CSPR Transfers** | Agent signs and submits native CSPR transfers using the server's secret key |
+| **Account Analysis** | Detailed account info with recent transaction scanning |
+| **Whale Monitoring** | Background watcher that polls accounts every 30s and displays alerts in the Monitor tab |
+| **Smart Contract Interaction** | Deployed Greeter contract on Testnet — read/write entry points via CLI |
+
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Backend | Python + FastAPI |
-| Agent Framework | LangChain (OpenAI tools agent) |
+| Agent Framework | LangChain + LangGraph (create_react_agent) |
 | LLM | GPT-4o-mini |
 | Blockchain Data | Casper MCP Server (via CSPR.cloud) |
-| MCP Protocol | `mcp` Python SDK |
+| MCP Protocol | `mcp` Python SDK (Streamable HTTP) |
 | Smart Contracts | Odra Framework (Rust) |
 | Frontend | HTML + CSS + vanilla JS |
 
@@ -35,6 +54,8 @@ Bot:   Calls GetAccountInfo → returns balance, staking, delegation status
 - Python 3.10+
 - [OpenAI API key](https://platform.openai.com/api-keys)
 - [CSPR.cloud API key](https://cspr.cloud) (free)
+- [Casper CLI client](https://docs.casper.network/developers/cli/setup/) (for transfers)
+- A funded Testnet account with a PEM secret key (for transfers)
 
 ### 2. Setup
 
@@ -52,7 +73,11 @@ Edit `.env`:
 OPENAI_API_KEY=sk-...
 CSPR_CLOUD_API_KEY=your-key
 CASPER_NETWORK=testnet
+SECRET_KEY_PATH=secret_key.pem
+CASPER_NODE=http://65.109.115.124:7777
 ```
+
+Place your PEM secret key at `secret_key.pem` in the project root.
 
 ### 3. Run
 
@@ -146,14 +171,28 @@ casper-client put-transaction package \
 
 Call `get_greeting` again (first command) to confirm the new greeting is stored.
 
-### Interact via the Chat UI
+## Chat UI
 
-Start the server (`uvicorn src.main:app --reload`), open `http://localhost:8000`, and ask questions like:
+Open `http://localhost:8000` and use natural language:
 
-- *"What entry points does the greeter contract have?"*
-- *"Get the current greeting from the deployed contract."*
+| You say | What happens |
+|---|---|
+| *"What's the network status?"* | Agent calls MCP `GetNetworkStatus` |
+| *"Send 5 CSPR to account-hash-2bc76a..."* | Agent signs + submits a native transfer |
+| *"Analyze account account-hash-..."* | Agent fetches balance, info, and recent activity |
+| *"Monitor account-hash-... for transactions > 100 CSPR"* | Background watcher starts, alerts in Monitor tab |
+| *"What entry points does the greeter contract have?"* | Agent queries the deployed contract |
 
-Write calls (`set_greeting`) are **not available through the chat UI** — the hosted MCP endpoint only exposes read tools. Use the CLI commands above for writes.
+### Chat Tab
+Type or click suggestion chips. The agent autonomously decides which tool to call.
+
+### Monitor Tab
+Switch to the **Monitor** tab to:
+- Add accounts to watch (with optional label and minimum CSPR threshold)
+- View live alerts from the background watcher (polls every 30s)
+- Remove monitored accounts
+
+> **Note:** Write calls to the Greeter contract (`set_greeting`) are CLI-only. The hosted MCP endpoint exposes read tools only.
 
 ## Source Code
 
@@ -178,12 +217,12 @@ cargo odra deploy --network testnet
 
 | Criterion | How We Hit It |
 |---|---|
-| Technical Execution | FastAPI + LangChain + MCP integration |
-| Innovation & Originality | Natural language → blockchain via AI agent |
-| Use of AI / Agentic Systems | GPT-4o-mini autonomously routes tool calls |
-| Real-World Applicability | Non-technical users can query on-chain data |
-| Working Smart Contracts | Greeter on Testnet |
-| Long-Term Launch Plans | Extensible to transfers, DeFi, wallet mgmt |
+| Technical Execution | FastAPI + LangGraph + MCP + background monitor worker |
+| Innovation & Originality | Natural language → blockchain via AI agent that transacts |
+| Use of AI / Agentic Systems | GPT-4o-mini autonomously routes tool calls, signs transfers, analyzes accounts |
+| Real-World Applicability | Send CSPR, analyze whale wallets, monitor accounts — practical DeFi use |
+| Working Smart Contracts | Greeter contract deployed on Testnet with verified entry points |
+| Long-Term Launch Plans | Extensible to DeFi protocols, staking automation, multi-agent systems |
 
 ## Resources
 - [Casper AI Toolkit](https://www.casper.network/ai)
