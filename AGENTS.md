@@ -34,11 +34,17 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 | `src/mcp_client.py` | Async MCP client (streamable_http to hosted MCP) |
 | `src/account_analyzer.py` | Account analysis (balance, biggest tx scanning) |
 | `src/monitor.py` | Background account monitor (30s poll loop) |
-| `src/public/index.html` | Dark-themed chat UI with nav link to /monitor |
+| `src/public/index.html` | Dark-themed chat UI with nav link to /portfolio, /monitor |
+| `src/public/portfolio.html` | Portfolio dashboard page at /portfolio |
 | `src/public/monitor.html` | Standalone monitor page at /monitor |
+| `src/portfolio_cache.py` | JSON-backed cache tracking tokens, NFTs, and collections created by the agent |
+| `src/contract_registry.py` | JSON-backed registry for deployed contract instances (multi-contract tracking) |
 | `smart-contract/src/token_factory.rs` | Token Factory contract (deploy_token, transfer, balance_of, mint, token_info, total_tokens) |
-| `smart-contract/src/lib.rs` | Crate root (no_std/no_main for wasm, pub mod token_factory) |
-| `smart-contract/Odra.toml` | Contract definition (token_factory::TokenFactory) |
+| `smart-contract/src/nft_marketplace.rs` | NFT Marketplace contract (mint_nft, transfer_nft, list_nft, buy_nft, nft_info, owner_of) |
+| `contracts_registry.json` | Auto-generated file tracking all deployed contract instances |
+| `portfolio_cache.json` | Auto-generated file tracking tokens, NFTs, and collections from agent actions |
+| `smart-contract/src/lib.rs` | Crate root (no_std/no_main for wasm, pub mod token_factory, pub mod nft_marketplace) |
+| `smart-contract/Odra.toml` | Contract definitions (token_factory::TokenFactory + nft_marketplace::NftMarketplace) |
 | `smart-contract/bin/build_contract.rs` | Wasm build binary target |
 | `smart-contract/bin/build_schema.rs` | Schema generation binary target |
 | `smart-contract/bin/cli.rs` | CLI deploy script binary target |
@@ -47,6 +53,9 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 | `smart-contract/rust-toolchain` | Nightly toolchain pin |
 | `tests/test_integration.py` | Python integration tests (12 tests) |
 | `AGENTS.md` | This file — project context for resume support |
+| `Dockerfile` | Multi-stage build: compiles casper-client with nightly Rust, copies to Python slim |
+| `docker-compose.yml` | Single service: port 8000, `.env` injection |
+| `.dockerignore` | Excludes `.venv/`, `.env`, `__pycache__/`, target/ |
 
 ## Current State
 - [x] Project scaffolding (Python + FastAPI + LangChain)
@@ -54,7 +63,7 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 - [x] LangGraph agent with MCP tool routing
 - [x] Python MCP client (streamable_http → mcp.testnet.cspr.cloud)
 - [x] Web chat UI (clean single-page, no tabs, Casper-focused hero)
-- [x] Smart contract code (Odra Greeter → Token Factory) + wasm binary builds (160KB)
+- [x] Smart contract code (Odra Greeter → Token Factory) + wasm binary builds (300KB)
 - [x] .env configured with API keys
 - [x] langgraph in requirements.txt
 - [x] SECRET_KEY env var (PEM content) + target/ gitignored
@@ -63,151 +72,271 @@ User → Web UI → FastAPI POST /api/chat → run_agent()
 - [x] Account analysis tool (account details, biggest tx scanning)
 - [x] call_contract_entry_point tool (agent calls Token Factory entry points)
 - [x] Monitor feature moved to standalone /monitor page (nav links on both pages)
-- [x] Token Factory contract replaces Greeter (deploy_token, transfer, balance_of, mint)
-- [x] Python integration tests (12 tests pass — imports, MCP client, account analyzer, CSPR transfer, contract calls, agent responses)
-- [ ] Deploy Token Factory to Casper Testnet
-- [ ] Set CONTRACT_PACKAGE_HASH env var after deployment
+- [x] Token Factory contract replaces Greeter (deploy_token, transfer, balance_of, mint, token_info, total_tokens)
+- [x] Token Factory deployed to Casper Testnet (block 8310310, 500 CSPR)
+- [x] CONTRACT_PACKAGE_HASH set in .env
+- [x] Docker image builds and runs (casper-client 5.0.1 bundled)
+- [x] Python integration tests (12/12 pass)
+- [x] NFT Marketplace contract (mint_nft, transfer_nft, list_nft, buy_nft, nft_info, owner_of, total_nfts)
+- [x] Multi-step agent workflows (agent chains multiple contract calls)
+- [x] Portfolio dashboard at /portfolio
+- [x] WALLET_ACCOUNT_HASH in .env for portfolio queries
+- [x] CONTRACT_HASH in .env for on-chain state queries
+- [x] Deploy NFT contract to Casper Testnet
+- [x] Collection Factory contract (create_collection, mint_nft with mint_price payment to creator)
+- [x] Multiple NFT deploy + mint workflows (deploy_contract tool, contract registry, multi-contract tracking)
+- [x] Portfolio cache (JSON-backed tracking of tokens, NFTs, collections created by agent)
+- [x] Portfolio dashboard shows custom tokens, collections, and agent-minted NFTs
+- [x] Agent input validation (prompt tells agent to ask for missing required fields before calling tools)
+- [ ] Deploy to free cloud (Koyeb/Railway/Fly)
 - [ ] Record demo video
 - [ ] Submit on DoraHacks
+
+## Fixes Applied (Session 2026-06-26)
+
+### MCP Client (`src/mcp_client.py`)
+- **Problem:** `streamablehttp_client` (deprecated) sent 400 Bad Request to CSPR.cloud MCP
+- **Fix:** Replaced with `streamable_http_client` + `httpx.AsyncClient(headers=...)` — the new API expects headers on the client, not as transport args
+- **Problem:** `CASPER_NETWORK=casper-test` was passed as `X-Casper-Network: casper-test`, but CSPR.cloud API expects `testnet` or `mainnet`
+- **Fix:** Added `_API_NETWORK` mapping: `casper-test`/`testnet` → `testnet`, `casper`/`mainnet` → `mainnet`
+
+### Agent Tool Names (`src/agent.py`)
+- **Problem:** System prompt examples used `GetNetworkStatus` (PascalCase), but actual MCP tools are all lowercase (`get_network_status`)
+- **Fix:** Changed examples to match actual tool names: `get_network_status`, `get_latest_blocks`, `get_account_info`
+
+### Contract Call Arg Types (`src/tools.py`)
+- **Problem:** Python `int` was sent as `u64`, but `decimals` needs `u8`, `total_supply` needs `u256`, `token_id` needs `u32`, `owner`/`recipient` needs `key`
+- **Fix:** Added `_ARG_TYPE_OVERRIDES` dict mapping arg names to correct Casper CL types
+
+### Contract Build
+- **Problem:** `cargo build --target wasm32-unknown-unknown` produced wasm without `call` export (entry points missing)
+- **Root cause:** Odra requires `cargo odra build` (the `cargo-odra` CLI), not plain `cargo build` — the CLI sets `ODRA_MODULE`/`ODRA_BACKEND` env vars during compilation, which triggers the build script to generate proper entry point exports
+- **Fix:** Use `cargo odra build` which outputs to `smart-contract/wasm/TokenFactory.wasm` (300KB, with `call`, `deploy_token`, `transfer`, `balance_of`, `mint`, `token_info`, `total_tokens`, `init` exports)
 
 ## Deployed Contract (Casper Testnet)
 | Field | Value |
 |---|---|
 | Network | Casper Testnet (casper-test) |
-| Deploy method | `put-transaction session` with `--install-upgrade` |
+| Deploy method | `casper-client put-transaction session --wasm-path smart-contract/wasm/TokenFactory.wasm --install-upgrade` |
+| Transaction hash | `31814b3d61345892e4dfefcf036a36a807d9cf3e3b27c70fba8f3803b2c3cac8` |
 | Contract Package Hash | `hash-5095fbfcbfa662ef13731dd0822317e100f2642230c2a35f0241e888eb8383eb` |
 | Contract Hash | `contract-c3b50a15995f97f424b8e4541499d03a80e0f2ba7b528edb07c9712e7dcc3354` |
 | Account Hash | `account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5` |
-| Node | `65.109.115.124:7777` |
+| Public Key | `0202c92a8225d3026af3a7a499718b77b8d77c45e452c402ae5a66979529cc885b14` |
+| Node | `http://65.109.115.124:7777` |
 | Block Height | 8310310 |
-| Deploy Cost | 500 CSPR for Token Factory (300KB wasm) |
+| Deploy Cost | 500 CSPR (paid, cost in full) |
+| Token Factory Named Key | `token_factory` → `hash-5095fbfc...` |
+| Access Token Named Key | `token_factory_access_token` → `uref-88840ab0...` |
 
 ### Token Factory Entry Points
-| Entry Point | Args | Returns | Description |
+| Entry Point | Args | Casper CL Types | Returns |
 |---|---|---|---|
-| `deploy_token` | `name: String, symbol: String, decimals: u8, total_supply: U256` | `u32` (token_id) | Deploy a new token, deployer gets full supply |
-| `transfer` | `token_id: u32, recipient: Address, amount: U256` | `()` | Transfer tokens between accounts |
-| `balance_of` | `token_id: u32, owner: Address` | `U256` | Query token balance |
-| `token_info` | `token_id: u32` | `Option<TokenInfo>` | Get token metadata |
-| `total_tokens` | (none) | `u32` | Count of deployed tokens |
-| `mint` | `token_id: u32, recipient: Address, amount: U256` | `()` | Mint new tokens (deployer only) |
+| `deploy_token` | `name`, `symbol`, `decimals`, `total_supply` | `String`, `String`, `U8`, `U256` | `U32` (token_id) |
+| `transfer` | `token_id`, `recipient`, `amount` | `U32`, `Key`, `U256` | `()` |
+| `balance_of` | `token_id`, `owner` | `U32`, `Key` | `U256` |
+| `token_info` | `token_id` | `U32` | `Option<TokenInfo>` |
+| `total_tokens` | (none) | — | `U32` |
+| `mint` | `token_id`, `recipient`, `amount` | `U32`, `Key`, `U256` | `()` |
 
-### Deploy Notes (Token Factory)
-- Wasm binary: 160KB (smaller than Greeter's 280KB)
-- Deploy command template (fill in actual env vars):
-  ```bash
-  casper-client put-transaction session \
-    --node-address $NODE --chain-name $CHAIN \
-    --secret-key $KEY \
-    --session-path smart-contract/target/wasm32-unknown-unknown/release/casper_agentic_token_factory_build_contract.wasm \
-    --install-upgrade \
-    --session-arg "odra_cfg_package_hash_key_name:string='token_factory'" \
-    --session-arg "odra_cfg_allow_key_override:bool='true'" \
-    --session-arg "odra_cfg_is_upgradable:bool='true'" \
-    --session-arg "odra_cfg_is_upgrade:bool='false'" \
-    --payment-amount 500000000000
-  ```
+**IMPORTANT:** `recipient`/`owner` args are `Key` type, not `address`. Use `--session-arg "owner:key='account-hash-...'"` in CLI.
 
-### Test Note
-- `cargo test` on nightly 1.90.0 fails due to `serde_core` alloc conflict (nightly toolchain issue, not code bug)
-- Contract compiles to wasm correctly (verified: 160KB .wasm file)
-- Python integration tests pass (12/12): `python -m pytest tests/test_integration.py -v --asyncio-mode=auto`
+### NFT Marketplace Entry Points
+| Entry Point | Args | Casper CL Types | Returns |
+|---|---|---|---|
+| `mint_nft` | `metadata_uri`, `recipient` | `String`, `Key` | `U64` (token_id) |
+| `transfer_nft` | `token_id`, `recipient` | `U64`, `Key` | `()` |
+| `list_nft` | `token_id`, `price` | `U64`, `U256` | `()` |
+| `unlist_nft` | `token_id` | `U64` | `()` |
+| `buy_nft` | `token_id`, `buyer` | `U64`, `Key` | `()` |
+| `nft_info` | `token_id` | `U64` | `Option<NftInfo>` |
+| `owner_of` | `token_id` | `U64` | `Option<Address>` |
+| `total_nfts` | (none) | — | `U64` |
+| `metadata_uri` | `token_id` | `U64` | `Option<String>` |
+
+**Buy flow:** CSPR transfer is handled separately by the agent (send_cspr_transfer to seller, then call buy_nft).
+
+### Collection Factory Entry Points
+| Entry Point | Args | Casper CL Types | Returns |
+|---|---|---|---|
+| `create_collection` | `name`, `symbol`, `base_uri`, `mint_price` | `String`, `String`, `String`, `U256` | `U32` (collection_id) |
+| `mint_nft` | `collection_id`, `recipient` | `U32`, `Key` | `U64` (token_id) |
+| `transfer_nft` | `token_id`, `recipient` | `U64`, `Key` | `()` |
+| `list_nft` | `token_id`, `price` | `U64`, `U256` | `()` |
+| `unlist_nft` | `token_id` | `U64` | `()` |
+| `buy_nft` | `token_id`, `buyer` | `U64`, `Key` | `()` |
+| `collection_info` | `collection_id` | `U32` | `Option<CollectionInfo>` |
+| `nft_info` | `token_id` | `U64` | `Option<NftEntry>` |
+| `owner_of` | `token_id` | `U64` | `Option<Address>` |
+| `total_collections` | (none) | — | `U32` |
+| `total_nfts_in_collection` | `collection_id` | `U32` | `U64` |
+| `nfts_by_collection` | `collection_id`, `page`, `page_size` | `U32`, `U32`, `U32` | `Vec<U64>` |
+| `metadata_uri` | `token_id` | `U64` | `Option<String>` |
+| `transfer_nft` | `token_id`, `recipient` | `U64`, `Key` | `()` |
+| `list_nft` | `token_id`, `price` | `U64`, `U256` | `()` |
+| `unlist_nft` | `token_id` | `U64` | `()` |
+| `buy_nft` | `token_id`, `buyer` | `U64`, `Key` | `()` |
+| `collection_info` | `collection_id` | `U32` | `Option<CollectionInfo>` |
+| `nft_info` | `token_id` | `U64` | `Option<NftEntry>` |
+| `owner_of` | `token_id` | `U64` | `Option<Address>` |
+| `total_collections` | (none) | — | `U32` |
+| `total_nfts_in_collection` | `collection_id` | `U32` | `U64` |
+| `nfts_by_collection` | `collection_id`, `page`, `page_size` | `U32`, `U32`, `U32` | `Vec<U64>` |
+| `metadata_uri` | `token_id` | `U64` | `Option<String>` |
+
+**Mint flow:** Agent first transfers mint_price CSPR to the collection creator, then calls mint_nft. Payment not bundled in contract call.
+
+### NFT Marketplace Deployed (Casper Testnet)
+| Field | Value |
+|---|---|
+| Transaction hash | `4b2c8c0d337d144939d80dd5b1081655490de2f925dec832f8ef3ea97bcdb8ed` |
+| Contract Package Hash | `hash-0c5849200ac2d72291b5bd811024396bb4954e82b8e155105c4ee7b0cedcb896` |
+| Contract Hash | `contract-2168fc559eff8ed6d521f4b67ac297181547e1fcbe845b215aeda228218bd738` |
+| Named Key | `nft_marketplace` → `hash-0c584920...` |
+| Deploy method | `casper-client put-transaction session --wasm-path smart-contract/wasm/NftMarketplace.wasm --install-upgrade` (without `--transaction-runtime vm-casper-v2`) |
+| Entry points verified | `mint_nft`, `transfer_nft`, `list_nft`, `unlist_nft`, `buy_nft`, `nft_info`, `owner_of`, `total_nfts`, `metadata_uri` |
+
+## Docker Setup
+
+### Build locally
+```bash
+docker compose build    # ~10 min (compiles casper-client from source in builder stage)
+docker compose up -d    # runs on port 8000
+```
+
+### Dockerfile details
+- **Stage 1 (builder):** `rust:bookworm` → `rustup default nightly` → `cargo install casper-client@5.0.1`
+- **Stage 2 (runtime):** `python:3.13-slim-bookworm` → install Python deps → copy casper-client binary + app code
+- **Key:** nightly Rust needed because `casper-client` 5.0.1's transitive deps use `edition2024` Cargo feature
 
 ## How to Run
+
+### Local (no Docker)
 ```bash
-cd casper-agentic-bot
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-# Edit .env: add OPENAI_API_KEY + CSPR_CLOUD_API_KEY (free at cspr.cloud)
+cd /home/sohail/mystuff/10-Work/11-Hackathons/casper-agentic-bot
+source .venv/bin/activate
 uvicorn src.main:app --reload
 # Open http://localhost:8000
 ```
 
-## How to Verify Deployed Contract
+### Docker
 ```bash
-# Query account named keys to confirm contract package exists
+cd /home/sohail/mystuff/10-Work/11-Hackathons/casper-agentic-bot
+docker compose up -d
+# Open http://localhost:8000
+```
+
+## How to Verify & Test
+
+### Check contract on-chain
+```bash
+# Query account named keys
 casper-client query-global-state \
     --node-address http://65.109.115.124:7777 \
     --key account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5 \
     -q "token_factory"
 
-# Query contract entity to see entry points
+# Query entry points
 casper-client query-global-state \
     --node-address http://65.109.115.124:7777 \
-    --key hash-<CONTRACT_HASH>
+    --key hash-c3b50a15995f97f424b8e4541499d03a80e0f2ba7b528edb07c9712e7dcc3354
 ```
 
-## How to Call Entry Points (Read & Write)
-
-Set env vars:
+### Run integration tests
 ```bash
-export NODE=http://65.109.115.124:7777
-export CHAIN=casper-test
-export PACKAGE=hash-<DEPLOYED_PACKAGE_HASH>
-export KEY=<(echo "$SECRET_KEY")
+source .venv/bin/activate
+python -m pytest tests/test_integration.py -v --asyncio-mode=auto
 ```
 
-**Deploy a token:** `deploy_token`
+### Test agent via API
 ```bash
-casper-client put-transaction package \
-    --node-address $NODE --chain-name $CHAIN \
-    --secret-key $KEY \
-    --contract-package-hash $PACKAGE \
-    --session-entry-point deploy_token \
-    --session-arg "name:string='MyToken'" \
-    --session-arg "symbol:string='MTK'" \
-    --session-arg "decimals:u8='8'" \
-    --session-arg "total_supply:u256='1000000'" \
-    --payment-amount 5000000000 \
-    --standard-payment true --gas-price-tolerance 1
+curl -s -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is the Casper network status?"}'
+
+curl -s -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Deploy a token called MyCoin with symbol MYC, 8 decimals, 1 million supply"}'
 ```
 
-**Transfer tokens:** `transfer`
-```bash
-casper-client put-transaction package \
-    --node-address $NODE --chain-name $CHAIN \
-    --secret-key $KEY \
-    --contract-package-hash $PACKAGE \
-    --session-entry-point transfer \
-    --session-arg "token_id:u32='0'" \
-    --session-arg "recipient:address='account-hash-...'" \
-    --session-arg "amount:u256='100'" \
-    --payment-amount 5000000000 \
-    --standard-payment true --gas-price-tolerance 1
+## .env File
+Located at `/home/sohail/mystuff/10-Work/11-Hackathons/casper-agentic-bot/.env`:
+```
+OPENAI_API_KEY=sk-proj-...
+CSPR_CLOUD_API_KEY=019f000c-db00-7e45-b8c3-b60e0afb3e1b
+CASPER_NETWORK=casper-test
+SECRET_KEY="-----BEGIN EC PRIVATE KEY-----\nMHQCAQEE...\n-----END EC PRIVATE KEY-----"
+CONTRACT_PACKAGE_HASH=hash-5095fbfcbfa662ef13731dd0822317e100f2642230c2a35f0241e888eb8383eb
+CASPER_NODE=http://65.109.115.124:7777
+WALLET_ACCOUNT_HASH=account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5
+CONTRACT_HASH=contract-c3b50a15995f97f424b8e4541499d03a80e0f2ba7b528edb07c9712e7dcc3354
+NFT_CONTRACT_PACKAGE_HASH=
+NFT_CONTRACT_HASH=
 ```
 
-**Check balance:** `balance_of`
-```bash
-casper-client put-transaction package \
-    --node-address $NODE --chain-name $CHAIN \
-    --secret-key $KEY \
-    --contract-package-hash $PACKAGE \
-    --session-entry-point balance_of \
-    --session-arg "token_id:u32='0'" \
-    --session-arg "owner:address='account-hash-...'" \
-    --payment-amount 5000000000 \
-    --standard-payment true --gas-price-tolerance 1
-```
+## Key Implementation Details
 
-Check results: `casper-client get-transaction --node-address $NODE <TX_HASH>`
+### `src/mcp_client.py` — MCP Client
+- Uses `streamable_http_client` (new API, not deprecated `streamablehttp_client`)
+- Creates `httpx.AsyncClient` with custom headers → passes to `streamable_http_client`
+- Headers: `X-CSPR-Cloud-Api-Key` + `X-Casper-Network` (maps `casper-test` → `testnet`)
+
+### `src/tools.py` — Agent Tools
+- `query_casper_blockchain(tool_name, arguments)` — calls MCP server
+- `send_cspr_transfer(recipient, amount_in_cspr, transfer_id)` — writes SECRET_KEY to temp file, calls `casper-client put-transaction transfer`
+- `analyze_account(account_hash)` — queries balance + scans recent blocks for largest txs
+- `call_contract_entry_point(entry_point, session_args, contract_name=None)` — targets a specific contract by name (from registry) or defaults to CONTRACT_PACKAGE_HASH
+- `deploy_contract(contract_name, wasm_name)` — deploys new contract instances (submits wasm + Odra args)
+- `verify_contract_deployment(tx_hash)` — checks deploy status, extracts contract hash from named keys
+- `list_deployed_contracts()` — shows all registered contract instances
+- Arg type overrides: `decimals→u8`, `total_supply→u256`, `amount→u256`, `owner/recipient/buyer→key`, `price→u256`, `metadata_uri→string`
+- Token type: `token_id→u32` for Token Factory, `token_id→u64` for NFT Marketplace
+
+### `src/agent.py` — LangGraph Agent
+- System prompt built from MCP tool list (dynamically fetched) + hardcoded instructions
+- Tools: `query_casper_blockchain`, `send_cspr_transfer`, `analyze_account`, `call_contract_entry_point`, `deploy_contract`, `verify_contract_deployment`, `list_deployed_contracts`
+- Example tool names must be **lowercase** (matches actual MCP tool names)
+- Multi-step workflows: agent chains multiple contract calls (e.g., deploy token → transfer → check balance, or mint NFT → list → buy)
+- Multi-contract support: agent can deploy multiple NFT contracts, track them by name, and mint on specific ones
+
+### `src/portfolio_cache.py` — Portfolio Cache
+- JSON-backed cache (`portfolio_cache.json`) tracking tokens, NFTs, and collections created via the agent
+- `log_token_deploy()` — called after `deploy_token` entry point (records name, symbol, decimals, total_supply, tx_hash)
+- `log_nft_mint()` — called after `mint_nft` entry point (records token_id, metadata_uri, recipient, contract_name)
+- `log_collection_create()` — called after `create_collection` entry point (records name, symbol, base_uri, mint_price, creator)
+- `get_cache()` — returns all cached data for the portfolio API
+- Auto-logged in `src/tools.py` `_log_contract_call()` after every successful contract call submission
+
+### `src/monitor.py` — Account Monitor
+- Background thread polls account every 30s
+- Accessible at `/monitor` web page
+- Uses SSE for real-time updates
+
+## Known Issues & Notes
+- `cargo test` on nightly 1.90.0 fails: `serde_core` + `alloc` conflict (known serde v1.0.228 + nightly issue, not a code bug)
+- Contract wasm built with `cargo odra build` (not plain `cargo build`)
+- `wasm-opt` not installed locally → harmless warning during build
+- `balance_of` and similar read-only entry points still cost gas (5 CSPR) since they're called via `put-transaction package`
+- MCP tool names are case-sensitive (all lowercase)
+- SECRET_KEY is the PEM content (env var, not a file path)
 
 ## Decisions Made
 - **Python + LangGraph** over Node.js (user preference for LangChain ecosystem)
 - **Hosted Casper MCP Server** (no local node or Docker needed)
-- **Single tool** `query_casper_blockchain(tool_name, arguments)` instead of 87 individual tools — keeps the prompt clean and the tool list manageable
+- **Single tool** `query_casper_blockchain(tool_name, arguments)` instead of 87 individual tools
 - **GPT-4o-mini** for cost efficiency + speed
 - **LangGraph create_react_agent** (v2) for the agent runtime
 - **Streamable HTTP** transport for MCP (stateless, no persistent sessions)
-
-## Known Constraints
-- MCP write tools are stdio-only (disabled on hosted endpoint). For on-chain transactions, use the smart contract deployment separately.
-- CSPR.cloud API key required (free tier available).
+- **SECRET_KEY** = actual PEM content in env var (not a file path). Temp file created per-call, deleted in `finally`
+- **Docker** for deployment (bundles casper-client)
+- **Koyeb** recommended for free 24/7 hosting
 
 ## Troubleshooting Deploy Errors
 | Error Code | Discriminant | Meaning | Fix |
 |---|---|---|---|
-| 64658 (0xFC92) | 122 | `MissingArg` — Odra's `call()` expects named args | Pass `odra_cfg_package_hash_key_name`, `odra_cfg_allow_key_override`, `odra_cfg_is_upgradable`, `odra_cfg_is_upgrade`, plus init args |
-| Out of gas | — | Wasm too large (280KB) for default payment | Increase `--payment-amount` (500 CSPR worked for ~231 CSPR consumed) |
-| 64641 (0xFC81) | 105 | `CannotOverrideKeys` — package hash key already exists | Set `odra_cfg_allow_key_override:bool='true'` |
-| -32602 | — | Invalid state query key format | Use `hash-` prefix for contracts (not `contract-`) in Casper 2.0 |
+| 64658 (0xFC92) | 122 | `MissingArg` — Odra's `call()` expects named args | Pass all odra_cfg_* args |
+| Out of gas | — | Wasm too large for payment | Increase `--payment-amount` to 500 CSPR |
+| 64641 (0xFC81) | 105 | `CannotOverrideKeys` — key already exists | Set `odra_cfg_allow_key_override:bool='true'` |
+| -32602 | — | Invalid state query key format | Use `hash-` prefix (not `contract-`) |
+| 400 Bad Request | — | MCP API rejected request | Check `X-Casper-Network` header value (must be `testnet` not `casper-test`) |
+| "Module doesn't have export call" | — | Wasm built with plain `cargo build` instead of `cargo odra build` | Rebuild with `cargo odra build`, use `smart-contract/wasm/TokenFactory.wasm` |

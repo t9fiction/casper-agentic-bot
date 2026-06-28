@@ -1,2 +1,8 @@
 [[contracts]]
 fqn = "token_factory::TokenFactory"
+
+[[contracts]]
+fqn = "nft_marketplace::NftMarketplace"
+
+[[contracts]]
+fqn = "collection_factory::CollectionFactory"

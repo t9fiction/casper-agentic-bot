@@ -347,6 +347,14 @@
     .message a:hover { text-decoration: underline; }
     .message strong { font-weight: 600; color: #fff; }
     .message hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .message .section-head {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent-teal);
+      margin: 12px 0 6px;
+    }
 
     /* Suggestions */
     .suggestions {
@@ -369,6 +377,15 @@
       border-color: var(--accent-teal);
       color: var(--accent-teal);
       background: rgba(0, 212, 200, 0.06);
+    }
+    .sugg-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 4px 6px 2px;
+      align-self: center;
     }
 
     /* Input Area */
@@ -460,6 +477,7 @@
     <span class="badge">AI Agent</span>
     <div class="nav-links">
       <a href="/" class="active">Chat</a>
+      <a href="/portfolio">Portfolio</a>
       <a href="/monitor">Monitor</a>
     </div>
     <div class="network-badge"><span class="dot"></span>Casper Testnet</div>
@@ -502,15 +520,15 @@
         </div>
 
         <h1 class="hero-title">
-          Interact with the <span class="highlight">Casper Blockchain</span><br />Using Natural Language
+          <span class="highlight">Agentic AI</span> for the<br />Casper Blockchain
         </h1>
         <p class="hero-sub">
-          Ask questions about accounts, balances, blocks, validators, and smart contracts. Send CSPR transfers, analyze on-chain activity, and more — all through AI-powered chat.
+          Deploy tokens, mint NFTs, check balances, send CSPR, analyze accounts, monitor wallets, and query on-chain data — all through natural language chat powered by an autonomous AI agent.
         </p>
 
         <div class="hero-ctas">
-          <button class="btn-demo" onclick="sendSuggestion('Show me what you can do on Casper testnet')">▶ Demo</button>
-          <button class="btn-app" onclick="sendSuggestion('What is the current Casper network status?')">Check Status →</button>
+          <button class="btn-demo" onclick="sendSuggestion('Create a token called RocketCoin with symbol RCK, 8 decimals and 1 million supply')">🪙 Create Token</button>
+          <button class="btn-app" onclick="sendSuggestion('Mint an NFT with metadata URI ipfs://rocket-1.json to my wallet')">🖼️ Mint NFT →</button>
         </div>
       </div>
 
@@ -520,18 +538,25 @@
 
     <!-- Suggestions -->
     <div class="suggestions" id="suggestions">
+      <span class="sugg-label">Explore</span>
       <button onclick="sendSuggestion('What is the current Casper network status?')">Network Status</button>
       <button onclick="sendSuggestion('Show me the latest 5 blocks')">Latest Blocks</button>
-      <button onclick="sendSuggestion('List the active validators on Casper')">Validators</button>
-      <button onclick="sendSuggestion('What is the total CSPR supply?')">CSPR Supply</button>
+      <button onclick="sendSuggestion('Analyze account account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Analyze Wallet</button>
+      <span class="sugg-label">Tokens</span>
+      <button onclick="sendSuggestion('Create a token called DemoCoin with symbol DMC, 8 decimals, 1 million total supply')">🪙 Deploy Token</button>
+      <button onclick="sendSuggestion('Check balance of token 0 for account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Check Balance</button>
+      <span class="sugg-label">NFTs</span>
+      <button onclick="sendSuggestion('Mint an NFT with metadata URI ipfs://demo-nft.json to my wallet')">🖼️ Mint NFT</button>
+      <button onclick="sendSuggestion('How many NFTs have been minted?')">Total NFTs</button>
+      <span class="sugg-label">Actions</span>
       <button onclick="sendSuggestion('Send 1 CSPR to account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Send CSPR</button>
-      <button onclick="sendSuggestion('Analyze account account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Analyze Account</button>
+      <button onclick="sendSuggestion('/portfolio')">📊 Portfolio</button>
     </div>
 
     <!-- Input -->
     <div class="input-area">
       <div class="input-wrap">
-        <input type="text" id="messageInput" placeholder="Ask about Casper, send CSPR, analyze accounts..." autofocus />
+        <input type="text" id="messageInput" placeholder="Deploy tokens, mint NFTs, check balances, send CSPR..." autofocus />
       </div>
       <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
@@ -554,7 +579,11 @@
     function addMessage(text, role) {
       const div = document.createElement('div');
       div.className = 'message ' + role;
-      div.textContent = text;
+      if (role === 'bot') {
+        div.innerHTML = formatMessage(text);
+      } else {
+        div.textContent = text;
+      }
       messagesContainer.appendChild(div);
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -581,9 +610,12 @@
 
     function formatMessage(text) {
       let html = escapeHtml(text);
-      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre>$2</pre>');
+      html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre>$2</pre>');
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/^--- (.+) ---$/gm, '<div class="section-head">$1</div>');
+      html = html.replace(/(Transaction hash[:\s]*)([a-f0-9]{64})/gi, '$1<code>$2</code>');
+      html = html.replace(/\n---\n/g, '\n<hr>\n');
       html = html.replace(/\n/g, '<br>');
       return html;
     }
@@ -614,6 +646,10 @@
     }
 
     function sendSuggestion(text) {
+      if (text === '/portfolio') {
+        window.location.href = '/portfolio';
+        return;
+      }
       messageInput.value = text;
       sendMessage();
     }

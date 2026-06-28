@@ -1,9 +1,10 @@
-secret_key.pem
-__pycache__/
-.venv/
+contracts_registry.json
 .env
-smart-contract/wasm/
-smart-contract/target/
-smart-contract/secret_key.pem
+__pycache__/
+secret_key.pem
 smart-contract/.cargo/
 smart-contract/resources/
+smart-contract/secret_key.pem
+smart-contract/target/
+smart-contract/wasm/
+.venv/
