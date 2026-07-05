@@ -1051,11 +1051,11 @@
     async function onWalletReady() {
       walletExtensionDetected = true;
       const storedPk = localStorage.getItem('casper_public_key');
-      if (storedPk && window.casperWallet) {
+      if (storedPk && window.casper) {
         try {
-          const connected = await window.casperWallet.isConnected();
+          const connected = await window.casper.isConnected();
           if (connected) {
-            const activePk = await window.casperWallet.getActivePublicKey();
+            const activePk = await window.casper.getActivePublicKey();
             if (activePk) {
               walletPk = activePk;
               localStorage.setItem('casper_public_key', activePk);
@@ -1070,9 +1070,9 @@
       updateWalletUI();
     }
 
-    window.addEventListener('casperWallet:ready', onWalletReady);
+    window.addEventListener('casper:connected', onWalletReady);
 
-    window.addEventListener('casperWallet:connected', function(e) {
+    window.addEventListener('casper:connected', function(e) {
       const pk = e.detail && (e.detail.publicKey || e.detail.activeKey);
       if (pk) {
         walletPk = pk;
@@ -1081,7 +1081,7 @@
       updateWalletUI();
     });
 
-    window.addEventListener('casperWallet:disconnected', function() {
+    window.addEventListener('casper:disconnected', function() {
       walletPk = '';
       localStorage.removeItem('casper_public_key');
       updateWalletUI();
@@ -1094,12 +1094,12 @@
         updateWalletUI();
         return;
       }
-      if (!window.casperWallet) {
+      if (!window.casper) {
         alert('Please install the Casper Wallet browser extension to connect.');
         return;
       }
       try {
-        const res = await window.casperWallet.requestConnection();
+        const res = await window.casper.requestConnection();
         if (res && res.publicKey) {
           walletPk = res.publicKey;
           localStorage.setItem('casper_public_key', walletPk);
@@ -1111,13 +1111,13 @@
     }
 
     (function initWallet() {
-      if (window.casperWallet) {
+      if (window.casper) {
         onWalletReady();
       } else {
-        window.addEventListener('casperWallet:ready', onWalletReady);
+        window.addEventListener('casper:connected', onWalletReady);
         let attempts = 0;
         const poll = setInterval(function() {
-          if (window.casperWallet) {
+          if (window.casper) {
             clearInterval(poll);
             onWalletReady();
           }
