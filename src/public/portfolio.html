@@ -450,14 +450,31 @@
       }
     }
 
+    function getWalletAPI() {
+      // Try multiple wallet API locations
+      if (window.casper) return window.casper;
+      if (window.casperWallet) return window.casperWallet;
+      if (window.CasperWallet) return window.CasperWallet;
+      // Check if it's nested in another object
+      if (window.__CASPER_WALLET__) return window.__CASPER_WALLET__;
+      return null;
+    }
+
     async function onWalletReady() {
       walletExtensionDetected = true;
+      const wallet = getWalletAPI();
+      if (!wallet) {
+        console.warn('Wallet API not found');
+        return;
+      }
+      console.log('Wallet API detected:', wallet);
+
       const storedPk = localStorage.getItem('casper_public_key');
-      if (storedPk && window.casper) {
+      if (storedPk && wallet) {
         try {
-          const connected = await window.casper.isConnected();
+          const connected = await wallet.isConnected();
           if (connected) {
-            const activePk = await window.casper.getActivePublicKey();
+            const activePk = await wallet.getActivePublicKey();
             if (activePk) {
               walletPk = activePk;
               localStorage.setItem('casper_public_key', activePk);
@@ -466,7 +483,9 @@
               return;
             }
           }
-        } catch { /* fall through */ }
+        } catch (e) {
+          console.error('Wallet check error:', e);
+        }
       }
       walletPk = '';
       localStorage.removeItem('casper_public_key');
@@ -475,8 +494,19 @@
     }
 
     window.addEventListener('casper:connected', onWalletReady);
+    window.addEventListener('casperWallet:connected', onWalletReady);
 
     window.addEventListener('casper:connected', function(e) {
+      const pk = e.detail && (e.detail.publicKey || e.detail.activeKey);
+      if (pk) {
+        walletPk = pk;
+        localStorage.setItem('casper_public_key', pk);
+        updateWalletUI();
+        loadPortfolio(walletPk);
+      }
+    });
+
+    window.addEventListener('casperWallet:connected', function(e) {
       const pk = e.detail && (e.detail.publicKey || e.detail.activeKey);
       if (pk) {
         walletPk = pk;
@@ -493,6 +523,13 @@
       showConnectPrompt();
     });
 
+    window.addEventListener('casperWallet:disconnected', function() {
+      walletPk = '';
+      localStorage.removeItem('casper_public_key');
+      updateWalletUI();
+      showConnectPrompt();
+    });
+
     async function toggleWallet() {
       if (walletPk) {
         walletPk = '';
@@ -501,12 +538,20 @@
         showConnectPrompt();
         return;
       }
-      if (!window.casper) {
+
+      const wallet = getWalletAPI();
+      console.log('Attempting wallet connection. Wallet API:', wallet);
+
+      if (!wallet) {
+        console.error('Casper Wallet not found. Available globals:', Object.keys(window).filter(k => k.includes('casper') || k.includes('wallet') || k.includes('Casper')));
         alert('Please install the Casper Wallet browser extension to connect.');
         return;
       }
+
       try {
-        const res = await window.casper.requestConnection();
+        console.log('Calling requestConnection()...');
+        const res = await wallet.requestConnection();
+        console.log('Connection response:', res);
         if (res && res.publicKey) {
           walletPk = res.publicKey;
           localStorage.setItem('casper_public_key', walletPk);
@@ -515,6 +560,7 @@
         }
       } catch (e) {
         console.error('Wallet connection failed:', e);
+        alert('Wallet connection error: ' + e.message);
       }
     }
 
@@ -816,20 +862,34 @@
 
     /* ─── Init ─── */
     updateWalletUI();
-    if (window.casper) {
-      onWalletReady();
-    } else {
-      window.addEventListener('casper:connected', onWalletReady);
-      let attempts = 0;
-      const poll = setInterval(function() {
-        if (window.casper) {
-          clearInterval(poll);
-          onWalletReady();
-        }
-        attempts++;
-        if (attempts >= 20) clearInterval(poll);
-      }, 250);
-    }
+    (function initWallet() {
+      console.log('Initializing wallet...');
+      let wallet = getWalletAPI();
+
+      if (wallet) {
+        console.log('Wallet found immediately');
+        onWalletReady();
+      } else {
+        console.log('Wallet not found, waiting...');
+        window.addEventListener('casper:connected', onWalletReady);
+        window.addEventListener('casperWallet:connected', onWalletReady);
+
+        let attempts = 0;
+        const poll = setInterval(function() {
+          wallet = getWalletAPI();
+          if (wallet) {
+            console.log('Wallet found after', attempts, 'attempts');
+            clearInterval(poll);
+            onWalletReady();
+          }
+          attempts++;
+          if (attempts >= 50) {
+            console.log('Wallet init timeout after 50 attempts');
+            clearInterval(poll);
+          }
+        }, 100);
+      }
+    })();
   </script>
 </body>
 </html>
