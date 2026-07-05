@@ -288,18 +288,32 @@ async def call_contract_entry_point(entry_point: str, session_args: dict = None,
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode != 0:
-            return f"Contract call failed: {result.stderr.strip() or result.stdout.strip()}"
+            error_msg = result.stderr.strip() or result.stdout.strip()
+            import sys
+            print(f"DEBUG: Contract call failed - {error_msg}", file=sys.stderr)
+            return f"Contract call failed: {error_msg}"
+
         data = json.loads(result.stdout)
         tx_hash = data.get("result", {}).get("transaction_hash", {})
         if isinstance(tx_hash, dict):
             tx_hash = tx_hash.get("Version1", str(tx_hash))
+
+        import sys
+        print(f"DEBUG: Contract call successful", file=sys.stderr)
+        print(f"DEBUG: Entry point: {entry_point}", file=sys.stderr)
+        print(f"DEBUG: TX Hash: {tx_hash}", file=sys.stderr)
+        print(f"DEBUG: Session args: {session_args}", file=sys.stderr)
+
         _log_contract_call(entry_point, session_args, tx_hash, contract_name)
+
         return (
-            f"Contract call submitted successfully!\n"
+            f"✅ Contract call submitted successfully!\n"
             f"Entry point: {entry_point}\n"
-            f"Transaction hash: {tx_hash}\n"
-            f"Args: {session_args}\n"
-            f"Check result: casper-client get-transaction --node-address {node} {tx_hash}"
+            f"Transaction Hash: {tx_hash}\n"
+            f"Arguments: {json.dumps(session_args)}\n"
+            f"\n⏳ Please wait 30-60 seconds for execution on-chain.\n"
+            f"Verification Command: casper-client get-transaction --node-address {node} {tx_hash}\n"
+            f"\nTo verify in chat, say: 'verify deployment {tx_hash}'"
         )
     except subprocess.TimeoutExpired:
         return "Contract call timed out after 120 seconds."

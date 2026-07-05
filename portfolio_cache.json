@@ -1,5 +1,17 @@
 {
-  "tokens": [],
+  "tokens": [
+    {
+      "name": "James Bond",
+      "symbol": "JMBD",
+      "decimals": 8,
+      "total_supply": "10000000",
+      "tx_hash": "435929ffd85bb090cb22240f841dc8ea3c835ae3105033176a29edc6cc0eca1b",
+      "contract_name": "token_factory",
+      "recipient": "account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5",
+      "status": "pending",
+      "timestamp": "2026-07-05T11:24:06.490828"
+    }
+  ],
   "nfts": [],
   "collections": []
 }
