@@ -47,8 +47,6 @@ async def chat(req: ChatRequest):
         reply = await run_agent(req.message, session_id=req.session_id)
         return {"reply": reply}
     except Exception as e:
-        import sys
-        print(f"DEBUG: Chat error: {e}", file=sys.stderr)
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
@@ -173,9 +171,6 @@ async def get_portfolio(public_key: str = None):
     contracts_count = 0
     deployed_contracts = []
 
-    import sys
-    print(f"DEBUG: raw_pkgs type = {type(raw_pkgs)}, length = {len(raw_pkgs) if isinstance(raw_pkgs, str) else 'N/A'}", file=sys.stderr)
-
     if raw_pkgs:
         try:
             # MCP returns markdown format, not JSON
@@ -227,8 +222,6 @@ async def get_portfolio(public_key: str = None):
             else:
                 pkgs = raw_pkgs if isinstance(raw_pkgs, list) else []
 
-            print(f"DEBUG: parsed packages count = {len(pkgs)}, total = {contracts_count}", file=sys.stderr)
-
             # Build enriched contracts list
             for pkg in pkgs[:20]:
                 if isinstance(pkg, dict):
@@ -238,9 +231,7 @@ async def get_portfolio(public_key: str = None):
                         "timestamp": pkg.get("timestamp", ""),
                         "type": pkg.get("type", "contract"),
                     })
-            print(f"DEBUG: deployed_contracts count = {len(deployed_contracts)}", file=sys.stderr)
         except (ValueError, TypeError, AttributeError, KeyError) as e:
-            print(f"DEBUG: Error parsing packages: {e}", file=sys.stderr)
             contracts_count = 0
 
     custom_cache = get_cache()
@@ -303,15 +294,6 @@ async def get_portfolio(public_key: str = None):
             }
         }
         enriched_contracts.append(enriched_contract)
-
-    # Add logging to help debug
-    import sys
-    print(f"DEBUG: recent_deploys = {recent_deploys}", file=sys.stderr)
-    print(f"DEBUG: cep18_tokens count = {len(cep18_tokens)}", file=sys.stderr)
-    print(f"DEBUG: nfts count = {len(nfts)}", file=sys.stderr)
-    print(f"DEBUG: blockchain contracts count = {len(deployed_contracts)}", file=sys.stderr)
-    print(f"DEBUG: enriched contracts count = {len(enriched_contracts)}", file=sys.stderr)
-    print(f"DEBUG: custom_cache = {custom_cache}", file=sys.stderr)
 
     return {
         "wallet": wallet_hash,

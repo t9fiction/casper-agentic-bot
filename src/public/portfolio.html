@@ -465,11 +465,8 @@
       walletExtensionDetected = true;
       const wallet = getWalletAPI();
       if (!wallet) {
-        console.warn('Wallet API not found');
         return;
       }
-      console.log('Wallet API detected:', wallet);
-
       // CasperWalletProvider is a function - call it to get the actual API
       let api = wallet;
       if (typeof wallet === 'function') {
@@ -491,7 +488,6 @@
             }
           }
         } catch (e) {
-          console.error('Wallet check error:', e);
         }
       }
       walletPk = '';
@@ -547,42 +543,33 @@
       }
 
       const wallet = getWalletAPI();
-      console.log('Attempting wallet connection. Wallet API:', wallet);
-
       if (!wallet) {
-        console.error('Casper Wallet not found. Available globals:', Object.keys(window).filter(k => k.includes('casper') || k.includes('wallet') || k.includes('Casper')));
+        
         alert('Please install the Casper Wallet browser extension to connect.');
         return;
       }
 
       try {
-        console.log('Wallet API type:', typeof wallet);
-        console.log('Wallet methods:', Object.keys(wallet));
+        
 
         // CasperWalletProvider is a function that returns the actual API
         // We need to call it to get the actual wallet object
         let api = wallet;
         if (typeof wallet === 'function') {
-          console.log('Wallet is a function, calling it...');
           api = wallet();
         }
 
-        console.log('Calling requestConnection()...');
+        
         const res = await api.requestConnection();
-        console.log('Connection response:', res);
-        console.log('Response type:', typeof res);
-        console.log('Response keys:', res ? Object.keys(res) : 'null');
+        
 
         // If response is true/boolean, connection succeeded but we need to get the public key
         // from a different method
         if (res === true || res === false) {
-          console.log('Response is boolean, connection status:', res);
           if (res === true) {
             // Connection succeeded, now get the public key
-            console.log('Getting active public key...');
             try {
               const pk = await api.getActivePublicKey?.();
-              console.log('Active public key:', pk);
               if (pk) {
                 walletPk = pk;
                 localStorage.setItem('casper_public_key', walletPk);
@@ -592,7 +579,6 @@
                 alert('Connected but could not get public key');
               }
             } catch (e) {
-              console.error('Error getting public key:', e);
               alert('Error getting public key: ' + e.message);
             }
           } else {
@@ -609,16 +595,14 @@
 
         if (pk) {
           walletPk = pk;
-          console.log('Public key extracted:', pk);
           localStorage.setItem('casper_public_key', walletPk);
           updateWalletUI();
           loadPortfolio(walletPk);
         } else {
-          console.error('No public key in response. Full response:', JSON.stringify(res));
+          
           alert('Wallet connected but could not extract public key');
         }
       } catch (e) {
-        console.error('Wallet connection failed:', e);
         alert('Wallet connection error: ' + e.message);
       }
     }
@@ -644,45 +628,28 @@
       if (!key) { showConnectPrompt(); return; }
       document.getElementById('loading').style.display = 'block';
       document.getElementById('content')?.remove();
-
-      console.log('Loading portfolio for:', key);
-
       try {
         const url = '/api/portfolio?public_key=' + encodeURIComponent(key);
-        console.log('Fetching from:', url);
-
         const res = await fetch(url);
-        console.log('Response status:', res.status);
-
         if (!res.ok) {
           const errorText = await res.text();
-          console.error('API error:', res.status, errorText);
           document.getElementById('loading').innerHTML = '<p style="color:#f87171">API Error: ' + res.status + '<br>' + errorText + '</p>';
           return;
         }
 
         const data = await res.json();
-        console.log('Portfolio data received:', data);
-        console.log('Custom tokens:', data.custom_tokens);
-        console.log('Custom NFTs:', data.custom_nfts);
-        console.log('Custom collections:', data.custom_collections);
-
         portfolioData = data;
         render(data);
       } catch (e) {
-        console.error('Portfolio load error:', e);
         document.getElementById('loading').innerHTML = '<p style="color:#f87171">Failed to load portfolio: ' + e.message + '<br>Is the server running?</p>';
       }
     }
 
     function render(data) {
-      console.log('Render started with data:', data);
       const loading = document.getElementById('loading');
       loading.style.display = 'none';
 
       const app = document.getElementById('app');
-      console.log('App element:', app);
-
       const content = document.createElement('div');
       content.id = 'content';
       content.innerHTML = '';
@@ -977,37 +944,9 @@
       const debugSection = document.createElement('div');
       debugSection.className = 'section';
       debugSection.style.borderColor = 'var(--accent-pink)';
-      debugSection.innerHTML = `
-        <div class="section-title" style="color:var(--accent-pink);">🐛 Debug Info</div>
-        <div style="background:#0D1B2A;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;">
-<b>API Response Summary:</b>
-Wallet: ${data.wallet ? data.wallet.slice(0, 20) + '...' : 'N/A'}
-CSPR Balance: ${data.cspr_balance || '0'}
-CEP-18 Tokens: ${data.tokens ? data.tokens.length : 0}
-NFTs: ${data.nfts ? data.nfts.length : 0}
-Deployed Contracts: ${data.deployed_contracts ? data.deployed_contracts.length : 0}
-Recent Deploys: ${data.recent_deploys ? data.recent_deploys.length : 0}
-
-<b>Cache Contents:</b>
-Custom Tokens: ${data.custom_tokens ? data.custom_tokens.length : 0}
-Custom NFTs: ${data.custom_nfts ? data.custom_nfts.length : 0}
-Custom Collections: ${data.custom_collections ? data.custom_collections.length : 0}
-
-<b>Deployed Contracts Details:</b>
-${(data.deployed_contracts || []).map((c, i) => `
-[${i+1}] ${c.metadata?.name || 'Unknown'} (${c.metadata?.symbol || 'N/A'})
-  Hash: ${c.contract_package?.slice(0, 30)}...
-  Source: ${c.metadata?.metadata_source || 'blockchain'}
-  Type: ${c.metadata?.type || c.type || 'unknown'}
-`).join('\n') || 'No contracts'}
-
-<b>Full JSON:</b>
-${JSON.stringify(data, null, 2).slice(0, 800)}...</div>
-      `;
-      content.appendChild(debugSection);
+      // Debug section removed for production
 
       app.appendChild(content);
-      console.log('Render complete! Content appended to app');
     }
 
     function formatCspr(motes) {
@@ -1049,14 +988,11 @@ ${JSON.stringify(data, null, 2).slice(0, 800)}...</div>
     /* ─── Init ─── */
     updateWalletUI();
     (function initWallet() {
-      console.log('Initializing wallet...');
       let wallet = getWalletAPI();
 
       if (wallet) {
-        console.log('Wallet found immediately');
         onWalletReady();
       } else {
-        console.log('Wallet not found, waiting...');
         window.addEventListener('casper:connected', onWalletReady);
         window.addEventListener('casperWallet:connected', onWalletReady);
 
@@ -1064,13 +1000,11 @@ ${JSON.stringify(data, null, 2).slice(0, 800)}...</div>
         const poll = setInterval(function() {
           wallet = getWalletAPI();
           if (wallet) {
-            console.log('Wallet found after', attempts, 'attempts');
             clearInterval(poll);
             onWalletReady();
           }
           attempts++;
           if (attempts >= 50) {
-            console.log('Wallet init timeout after 50 attempts');
             clearInterval(poll);
           }
         }, 100);

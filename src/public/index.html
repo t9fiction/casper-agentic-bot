@@ -1011,7 +1011,6 @@
         else addMessage(data.reply, 'bot');
       } catch (e) {
         removeLoading();
-        console.error('Chat error:', e);
         addMessage('Error: Could not reach the server.', 'bot');
       }
       sendBtn.disabled = false;
@@ -1077,11 +1076,8 @@
       walletExtensionDetected = true;
       const wallet = getWalletAPI();
       if (!wallet) {
-        console.warn('Wallet API not found');
         return;
       }
-      console.log('Wallet API detected:', wallet);
-
       // CasperWalletProvider is a function - call it to get the actual API
       let api = wallet;
       if (typeof wallet === 'function') {
@@ -1102,7 +1098,6 @@
             }
           }
         } catch (e) {
-          console.error('Wallet check error:', e);
         }
       }
       walletPk = '';
@@ -1152,42 +1147,33 @@
       }
 
       const wallet = getWalletAPI();
-      console.log('Attempting wallet connection. Wallet API:', wallet);
-
       if (!wallet) {
-        console.error('Casper Wallet not found. Available globals:', Object.keys(window).filter(k => k.includes('casper') || k.includes('wallet') || k.includes('Casper')));
+        
         alert('Please install the Casper Wallet browser extension to connect.');
         return;
       }
 
       try {
-        console.log('Wallet API type:', typeof wallet);
-        console.log('Wallet methods:', Object.keys(wallet));
+        
 
         // CasperWalletProvider is a function that returns the actual API
         // We need to call it to get the actual wallet object
         let api = wallet;
         if (typeof wallet === 'function') {
-          console.log('Wallet is a function, calling it...');
           api = wallet();
         }
 
-        console.log('Calling requestConnection()...');
+        
         const res = await api.requestConnection();
-        console.log('Connection response:', res);
-        console.log('Response type:', typeof res);
-        console.log('Response keys:', res ? Object.keys(res) : 'null');
+        
 
         // If response is true/boolean, connection succeeded but we need to get the public key
         // from a different method
         if (res === true || res === false) {
-          console.log('Response is boolean, connection status:', res);
           if (res === true) {
             // Connection succeeded, now get the public key
-            console.log('Getting active public key...');
             try {
               const pk = await api.getActivePublicKey?.();
-              console.log('Active public key:', pk);
               if (pk) {
                 walletPk = pk;
                 localStorage.setItem('casper_public_key', walletPk);
@@ -1196,7 +1182,6 @@
                 alert('Connected but could not get public key');
               }
             } catch (e) {
-              console.error('Error getting public key:', e);
               alert('Error getting public key: ' + e.message);
             }
           } else {
@@ -1213,28 +1198,23 @@
 
         if (pk) {
           walletPk = pk;
-          console.log('Public key extracted:', pk);
           localStorage.setItem('casper_public_key', walletPk);
           updateWalletUI();
         } else {
-          console.error('No public key in response. Full response:', JSON.stringify(res));
+          
           alert('Wallet connected but could not extract public key');
         }
       } catch (e) {
-        console.error('Wallet connection failed:', e);
         alert('Wallet connection error: ' + e.message);
       }
     }
 
     (function initWallet() {
-      console.log('Initializing wallet...');
       let wallet = getWalletAPI();
 
       if (wallet) {
-        console.log('Wallet found immediately');
         onWalletReady();
       } else {
-        console.log('Wallet not found, waiting...');
         window.addEventListener('casper:connected', onWalletReady);
         window.addEventListener('casperWallet:connected', onWalletReady);
 
@@ -1242,13 +1222,11 @@
         const poll = setInterval(function() {
           wallet = getWalletAPI();
           if (wallet) {
-            console.log('Wallet found after', attempts, 'attempts');
             clearInterval(poll);
             onWalletReady();
           }
           attempts++;
           if (attempts >= 50) {
-            console.log('Wallet init timeout after 50 attempts');
             clearInterval(poll);
           }
         }, 100);
