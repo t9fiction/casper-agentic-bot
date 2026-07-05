@@ -676,10 +676,12 @@
     }
 
     function render(data) {
+      console.log('Render started with data:', data);
       const loading = document.getElementById('loading');
       loading.style.display = 'none';
 
       const app = document.getElementById('app');
+      console.log('App element:', app);
 
       const content = document.createElement('div');
       content.id = 'content';
@@ -902,6 +904,7 @@
       }
 
       app.appendChild(content);
+      console.log('Render complete! Content appended to app');
     }
 
     function formatCspr(motes) {
