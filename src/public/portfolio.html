@@ -928,6 +928,31 @@
         content.appendChild(activitySection);
       }
 
+      // Debug Info Section (for troubleshooting)
+      const debugSection = document.createElement('div');
+      debugSection.className = 'section';
+      debugSection.style.borderColor = 'var(--accent-pink)';
+      debugSection.innerHTML = `
+        <div class="section-title" style="color:var(--accent-pink);">🐛 Debug Info</div>
+        <div style="background:#0D1B2A;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;">
+<b>API Response Summary:</b>
+Wallet: ${data.wallet ? data.wallet.slice(0, 20) + '...' : 'N/A'}
+CSPR Balance: ${data.cspr_balance || '0'}
+CEP-18 Tokens: ${data.tokens ? data.tokens.length : 0}
+NFTs: ${data.nfts ? data.nfts.length : 0}
+Deployed Contracts: ${data.deployed_contracts ? data.deployed_contracts.length : 0}
+Recent Deploys: ${data.recent_deploys ? data.recent_deploys.length : 0}
+
+<b>Cache Contents:</b>
+Custom Tokens: ${data.custom_tokens ? data.custom_tokens.length : 0}
+Custom NFTs: ${data.custom_nfts ? data.custom_nfts.length : 0}
+Custom Collections: ${data.custom_collections ? data.custom_collections.length : 0}
+
+<b>Full Response:</b>
+${JSON.stringify(data, null, 2).slice(0, 500)}...</div>
+      `;
+      content.appendChild(debugSection);
+
       app.appendChild(content);
       console.log('Render complete! Content appended to app');
     }

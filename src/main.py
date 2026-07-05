@@ -132,30 +132,51 @@ async def get_portfolio(public_key: str = None):
     raw_pkgs = await _mcp_call("get_account_contract_packages", {"accountIdentifier": raw_hash})
     contracts_count = 0
     deployed_contracts = []
+
+    import sys
+    print(f"DEBUG: raw_pkgs type = {type(raw_pkgs)}, value = {raw_pkgs!r}", file=sys.stderr)
+
     if raw_pkgs:
         try:
-            parsed = json.loads(raw_pkgs)
-            pkgs = parsed if isinstance(parsed, list) else (parsed.get("data", parsed.get("results", [])) if isinstance(parsed, dict) else [])
+            # Try to parse as JSON string
+            if isinstance(raw_pkgs, str):
+                parsed = json.loads(raw_pkgs)
+            else:
+                parsed = raw_pkgs
+
+            # Extract package list from various response formats
+            if isinstance(parsed, list):
+                pkgs = parsed
+            elif isinstance(parsed, dict):
+                pkgs = parsed.get("data", parsed.get("results", parsed.get("deployed_contracts", [])))
+            else:
+                pkgs = []
+
+            print(f"DEBUG: parsed packages count = {len(pkgs or [])}", file=sys.stderr)
+
             contracts_count = len(pkgs or [])
             # Also include contract details in response
             for pkg in (pkgs or [])[:20]:
                 if isinstance(pkg, dict):
                     deployed_contracts.append({
-                        "contract_package": pkg.get("contract_package", pkg.get("package_hash", "")),
+                        "contract_package": pkg.get("contract_package", pkg.get("package_hash", pkg.get("hash", ""))),
                         "version": pkg.get("version", pkg.get("contract_version", 0)),
                         "timestamp": pkg.get("timestamp", ""),
-                        "type": pkg.get("type", "contract"),
+                        "type": pkg.get("type", pkg.get("contract_type", "contract")),
                     })
-        except (json.JSONDecodeError, TypeError):
-            contracts_count = 2
+            print(f"DEBUG: deployed_contracts count = {len(deployed_contracts)}", file=sys.stderr)
+        except (json.JSONDecodeError, TypeError, AttributeError) as e:
+            print(f"DEBUG: Error parsing packages: {e}", file=sys.stderr)
+            contracts_count = 0
 
     custom_cache = get_cache()
 
     # Add logging to help debug
-    import sys
     print(f"DEBUG: recent_deploys = {recent_deploys}", file=sys.stderr)
-    print(f"DEBUG: raw_pkgs response = {raw_pkgs}", file=sys.stderr)
+    print(f"DEBUG: cep18_tokens count = {len(cep18_tokens)}", file=sys.stderr)
+    print(f"DEBUG: nfts count = {len(nfts)}", file=sys.stderr)
     print(f"DEBUG: custom_cache = {custom_cache}", file=sys.stderr)
+    print(f"DEBUG: deployed_contracts = {deployed_contracts}", file=sys.stderr)
 
     return {
         "wallet": wallet_hash,
