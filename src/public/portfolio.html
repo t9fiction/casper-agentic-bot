@@ -573,7 +573,35 @@
         console.log('Response type:', typeof res);
         console.log('Response keys:', res ? Object.keys(res) : 'null');
 
-        // Try different response formats
+        // If response is true/boolean, connection succeeded but we need to get the public key
+        // from a different method
+        if (res === true || res === false) {
+          console.log('Response is boolean, connection status:', res);
+          if (res === true) {
+            // Connection succeeded, now get the public key
+            console.log('Getting active public key...');
+            try {
+              const pk = await api.getActivePublicKey?.();
+              console.log('Active public key:', pk);
+              if (pk) {
+                walletPk = pk;
+                localStorage.setItem('casper_public_key', walletPk);
+                updateWalletUI();
+                loadPortfolio(walletPk);
+              } else {
+                alert('Connected but could not get public key');
+              }
+            } catch (e) {
+              console.error('Error getting public key:', e);
+              alert('Error getting public key: ' + e.message);
+            }
+          } else {
+            alert('Wallet connection was rejected');
+          }
+          return;
+        }
+
+        // Try different response formats (for other wallet types)
         let pk = res?.publicKey || res?.public_key || res?.pk || res?.key;
         if (!pk && typeof res === 'string') {
           pk = res;  // Response might be the public key directly
