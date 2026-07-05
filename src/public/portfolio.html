@@ -885,7 +885,7 @@
       `;
       content.appendChild(nftsSection);
 
-      // Deployed Contracts
+      // Deployed Contracts (ALL contracts from blockchain, with optional metadata)
       const deployedContracts = data.deployed_contracts || [];
       if (deployedContracts.length > 0) {
         const contractsSection = document.createElement('div');
@@ -895,17 +895,62 @@
             📦 Deployed Contracts
             <span class="count">${deployedContracts.length}</span>
           </div>
-          <div class="asset-grid">${deployedContracts.map(c => `
-            <div class="asset-card">
-              <div class="row">
-                <span class="name">${escapeHtml(c.type || 'Contract')}</span>
+          <div class="asset-grid">${deployedContracts.map(c => {
+            const meta = c.metadata || {};
+            const hasMetadata = meta.name || meta.symbol || meta.description;
+            const metadataSource = meta.metadata_source || 'blockchain';
+
+            return `
+              <div class="asset-card">
+                <div class="row">
+                  <span class="name">${escapeHtml(meta.name || 'Unknown Contract')}</span>
+                  ${meta.symbol ? `<span class="symbol">${escapeHtml(meta.symbol)}</span>` : ''}
+                </div>
+
+                <div class="meta" style="font-size:11px;color:var(--text-muted);">
+                  Type: ${escapeHtml(meta.type || c.type || 'contract')}
+                </div>
+
+                <div class="meta">
+                  Hash: ${escapeHtml((c.contract_package || '').slice(0, 20))}...
+                </div>
+
+                ${meta.description ? `
+                  <div class="meta" style="color:var(--text-secondary);font-size:12px;">
+                    ${escapeHtml(meta.description)}
+                  </div>
+                ` : ''}
+
+                ${meta.total_supply ? `
+                  <div class="meta">
+                    Supply: ${escapeHtml(meta.total_supply)}
+                  </div>
+                ` : ''}
+
+                ${meta.base_uri ? `
+                  <div class="meta" style="font-size:11px;word-break:break-all;">
+                    Base URI: ${escapeHtml(meta.base_uri.slice(0, 40))}${meta.base_uri.length > 40 ? '...' : ''}
+                  </div>
+                ` : ''}
+
+                ${c.version ? `
+                  <div class="meta">Version: ${escapeHtml(c.version)}</div>
+                ` : ''}
+
+                ${c.timestamp ? `
+                  <div class="meta" style="font-size:11px;">
+                    ${escapeHtml(c.timestamp)}
+                  </div>
+                ` : ''}
+
+                <div style="margin-top:8px;font-size:10px;color:var(--text-muted);">
+                  📍 ${metadataSource === 'cache' ? '✅ Tracked' : '⚪ From Blockchain'}
+                </div>
+
+                <button onclick="copyToClipboard('${c.contract_package}')" style="margin-top:8px;width:100%;padding:6px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-secondary);cursor:pointer;font-size:11px;font-weight:500;">📋 Copy Hash</button>
               </div>
-              <div class="meta">Hash: ${escapeHtml((c.contract_package || '').slice(0, 20))}...</div>
-              ${c.version ? `<div class="meta">Version: ${escapeHtml(c.version)}</div>` : ''}
-              ${c.timestamp ? `<div class="meta">${escapeHtml(c.timestamp)}</div>` : ''}
-              <button onclick="copyToClipboard('${c.contract_package}')" style="margin-top:8px;width:100%;padding:6px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-secondary);cursor:pointer;font-size:11px;font-weight:500;">📋 Copy Hash</button>
-            </div>
-          `).join('')}</div>
+            `;
+          }).join('')}</div>
         `;
         content.appendChild(contractsSection);
       }
@@ -934,7 +979,7 @@
       debugSection.style.borderColor = 'var(--accent-pink)';
       debugSection.innerHTML = `
         <div class="section-title" style="color:var(--accent-pink);">🐛 Debug Info</div>
-        <div style="background:#0D1B2A;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;">
+        <div style="background:#0D1B2A;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;">
 <b>API Response Summary:</b>
 Wallet: ${data.wallet ? data.wallet.slice(0, 20) + '...' : 'N/A'}
 CSPR Balance: ${data.cspr_balance || '0'}
@@ -948,8 +993,16 @@ Custom Tokens: ${data.custom_tokens ? data.custom_tokens.length : 0}
 Custom NFTs: ${data.custom_nfts ? data.custom_nfts.length : 0}
 Custom Collections: ${data.custom_collections ? data.custom_collections.length : 0}
 
-<b>Full Response:</b>
-${JSON.stringify(data, null, 2).slice(0, 500)}...</div>
+<b>Deployed Contracts Details:</b>
+${(data.deployed_contracts || []).map((c, i) => `
+[${i+1}] ${c.metadata?.name || 'Unknown'} (${c.metadata?.symbol || 'N/A'})
+  Hash: ${c.contract_package?.slice(0, 30)}...
+  Source: ${c.metadata?.metadata_source || 'blockchain'}
+  Type: ${c.metadata?.type || c.type || 'unknown'}
+`).join('\n') || 'No contracts'}
+
+<b>Full JSON:</b>
+${JSON.stringify(data, null, 2).slice(0, 800)}...</div>
       `;
       content.appendChild(debugSection);
 

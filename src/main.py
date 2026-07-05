@@ -207,12 +207,73 @@ async def get_portfolio(public_key: str = None):
 
     custom_cache = get_cache()
 
+    # Merge blockchain contracts with cache metadata
+    # Strategy: Show ALL blockchain contracts, use cache to add metadata
+    enriched_contracts = []
+
+    # Create a map of contract hashes to cached metadata for quick lookup
+    cached_by_package = {}
+    for token in custom_cache.get("tokens", []):
+        # Try to match by naming convention or explicit package
+        key = token.get("name", "").lower()
+        cached_by_package[key] = {
+            "type": "token",
+            "name": token.get("name", ""),
+            "symbol": token.get("symbol", ""),
+            "decimals": token.get("decimals", ""),
+            "total_supply": token.get("total_supply", ""),
+            "metadata_source": "cache"
+        }
+
+    for collection in custom_cache.get("collections", []):
+        key = collection.get("name", "").lower()
+        cached_by_package[key] = {
+            "type": "collection",
+            "name": collection.get("name", ""),
+            "symbol": collection.get("symbol", ""),
+            "base_uri": collection.get("base_uri", ""),
+            "mint_price": collection.get("mint_price", ""),
+            "metadata_source": "cache"
+        }
+
+    # Process all blockchain-discovered contracts
+    for contract in deployed_contracts:
+        pkg_hash = contract.get("contract_package", "")
+
+        # Try to find matching metadata in cache
+        metadata = None
+        for cached_key, cached_meta in cached_by_package.items():
+            # Check if this contract has cached metadata
+            # First try exact hash match, then try name match
+            if pkg_hash.endswith(cached_key) or cached_key in pkg_hash.lower():
+                metadata = cached_meta
+                break
+
+        # Build enriched contract object
+        enriched_contract = {
+            "contract_package": pkg_hash,
+            "version": contract.get("version", ""),
+            "timestamp": contract.get("timestamp", ""),
+            "type": contract.get("type", ""),
+            # Metadata fields (can be empty/null if not in cache)
+            "metadata": metadata or {
+                "name": None,
+                "symbol": None,
+                "type": None,
+                "description": None,
+                "metadata_source": "blockchain"
+            }
+        }
+        enriched_contracts.append(enriched_contract)
+
     # Add logging to help debug
+    import sys
     print(f"DEBUG: recent_deploys = {recent_deploys}", file=sys.stderr)
     print(f"DEBUG: cep18_tokens count = {len(cep18_tokens)}", file=sys.stderr)
     print(f"DEBUG: nfts count = {len(nfts)}", file=sys.stderr)
+    print(f"DEBUG: blockchain contracts count = {len(deployed_contracts)}", file=sys.stderr)
+    print(f"DEBUG: enriched contracts count = {len(enriched_contracts)}", file=sys.stderr)
     print(f"DEBUG: custom_cache = {custom_cache}", file=sys.stderr)
-    print(f"DEBUG: deployed_contracts = {deployed_contracts}", file=sys.stderr)
 
     return {
         "wallet": wallet_hash,
@@ -220,7 +281,7 @@ async def get_portfolio(public_key: str = None):
         "tokens": cep18_tokens,
         "nfts": nfts,
         "recent_deploys": recent_deploys,
-        "deployed_contracts": deployed_contracts,
+        "deployed_contracts": enriched_contracts,  # Now includes metadata where available
         "contracts": max(contracts_count, 1),
         "custom_tokens": custom_cache.get("tokens", []),
         "custom_nfts": custom_cache.get("nfts", []),
