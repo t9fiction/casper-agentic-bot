@@ -29,6 +29,10 @@ async def index():
 async def portfolio_page():
     return FileResponse(Path(__file__).parent / "public" / "portfolio.html")
 
+@app.get("/admin")
+async def admin_page():
+    return FileResponse(Path(__file__).parent / "public" / "admin.html")
+
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Admin - Add Deployments</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0A0E1A;
+      color: #FFFFFF;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin-bottom: 10px;
+      color: #00D4C8;
+    }
+    .subtitle {
+      color: #A0AEC0;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .section {
+      background: #111827;
+      border: 1px solid #1E293B;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .section h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #00D4C8;
+      border-bottom: 1px solid #1E293B;
+      padding-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    label {
+      font-size: 12px;
+      color: #A0AEC0;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 100px;
+      line-height: 32px;
+    }
+    input {
+      background: #0D1B2A;
+      border: 1px solid #1E293B;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #FFFFFF;
+      font-size: 13px;
+      flex: 1;
+      min-width: 150px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #00D4C8;
+      box-shadow: 0 0 0 2px rgba(0, 212, 200, 0.1);
+    }
+    button {
+      background: #00D4C8;
+      color: #0A0E1A;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 20px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    button:hover {
+      background: #00A89E;
+      transform: translateY(-1px);
+    }
+    .status {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+    }
+    .status.success {
+      background: rgba(29, 185, 84, 0.1);
+      border: 1px solid #1DB954;
+      color: #1DB954;
+      display: block;
+    }
+    .status.error {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid #F87171;
+      color: #F87171;
+      display: block;
+    }
+    .info-box {
+      background: rgba(0, 212, 200, 0.05);
+      border: 1px solid rgba(0, 212, 200, 0.2);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 15px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #A0AEC0;
+    }
+    a {
+      color: #00D4C8;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Portfolio Admin</h1>
+    <p class="subtitle">Manually add your deployed tokens, NFTs, and collections to the portfolio cache</p>
+
+    <!-- Add Token -->
+    <div class="section">
+      <h2>🪙 Add Token to Cache</h2>
+      <div class="info-box">
+        This adds a token deployment to your portfolio. Fill in the details from your Token Factory contract deployment.
+      </div>
+      <div class="form-group">
+        <label>Token Name</label>
+        <input type="text" id="tokenName" placeholder="e.g., MyToken" />
+      </div>
+      <div class="form-group">
+        <label>Symbol</label>
+        <input type="text" id="tokenSymbol" placeholder="e.g., MTK" />
+      </div>
+      <div class="form-group">
+        <label>Decimals</label>
+        <input type="number" id="tokenDecimals" placeholder="8" value="8" />
+      </div>
+      <div class="form-group">
+        <label>Total Supply</label>
+        <input type="text" id="tokenSupply" placeholder="1000000" />
+      </div>
+      <div class="form-group">
+        <label>Tx Hash (optional)</label>
+        <input type="text" id="tokenTxHash" placeholder="deployment transaction hash" />
+      </div>
+      <button onclick="addToken()">Add Token</button>
+      <div class="status" id="tokenStatus"></div>
+    </div>
+
+    <!-- Add NFT -->
+    <div class="section">
+      <h2>🖼️ Add NFT to Cache</h2>
+      <div class="info-box">
+        This adds an NFT mint to your portfolio. Use the token ID, metadata URI, and recipient address from your mint transaction.
+      </div>
+      <div class="form-group">
+        <label>Token ID</label>
+        <input type="text" id="nftTokenId" placeholder="e.g., 0" />
+      </div>
+      <div class="form-group">
+        <label>Metadata URI</label>
+        <input type="text" id="nftMetadataUri" placeholder="e.g., ipfs://QmXXX or https://..." />
+      </div>
+      <div class="form-group">
+        <label>Recipient (optional)</label>
+        <input type="text" id="nftRecipient" placeholder="account hash (uses wallet if empty)" />
+      </div>
+      <div class="form-group">
+        <label>Collection</label>
+        <input type="text" id="nftCollection" placeholder="e.g., nft_marketplace" value="custom" />
+      </div>
+      <div class="form-group">
+        <label>Tx Hash (optional)</label>
+        <input type="text" id="nftTxHash" placeholder="mint transaction hash" />
+      </div>
+      <button onclick="addNFT()">Add NFT</button>
+      <div class="status" id="nftStatus"></div>
+    </div>
+
+    <!-- Add Collection -->
+    <div class="section">
+      <h2>🏛️ Add Collection to Cache</h2>
+      <div class="info-box">
+        This adds a collection to your portfolio. Use the name, symbol, and base URI from your Collection Factory deployment.
+      </div>
+      <div class="form-group">
+        <label>Collection Name</label>
+        <input type="text" id="collectionName" placeholder="e.g., MyNFTs" />
+      </div>
+      <div class="form-group">
+        <label>Symbol</label>
+        <input type="text" id="collectionSymbol" placeholder="e.g., MYNFT" />
+      </div>
+      <div class="form-group">
+        <label>Base URI</label>
+        <input type="text" id="collectionBaseUri" placeholder="e.g., ipfs://QmXXX/ or https://..." />
+      </div>
+      <div class="form-group">
+        <label>Mint Price (CSPR)</label>
+        <input type="text" id="collectionMintPrice" placeholder="e.g., 100" value="0" />
+      </div>
+      <div class="form-group">
+        <label>Tx Hash (optional)</label>
+        <input type="text" id="collectionTxHash" placeholder="deployment transaction hash" />
+      </div>
+      <button onclick="addCollection()">Add Collection</button>
+      <div class="status" id="collectionStatus"></div>
+    </div>
+
+    <!-- View Cache -->
+    <div class="section">
+      <h2>📝 Current Cache</h2>
+      <button onclick="viewCache()">View Cache Contents</button>
+      <div id="cacheContents" style="margin-top: 15px; background: #0D1B2A; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; display: none;">
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="section" style="background: rgba(0, 212, 200, 0.05); border-color: rgba(0, 212, 200, 0.2);">
+      <h2>ℹ️ About This Tool</h2>
+      <p style="font-size: 13px; line-height: 1.8; color: #A0AEC0;">
+        The portfolio cache stores information about tokens, NFTs, and collections you deploy through the chat modals.
+        If you deployed contracts before this cache was created, use this tool to manually add them so they appear in your portfolio.
+      </p>
+      <p style="font-size: 13px; line-height: 1.8; color: #A0AEC0; margin-top: 10px;">
+        After adding your deployments here, go to <a href="/portfolio">📊 Portfolio</a> and refresh the page to see them appear.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    async function addToken() {
+      const name = document.getElementById('tokenName').value;
+      const symbol = document.getElementById('tokenSymbol').value;
+      const decimals = document.getElementById('tokenDecimals').value || 8;
+      const supply = document.getElementById('tokenSupply').value;
+      const txHash = document.getElementById('tokenTxHash').value;
+
+      if (!name || !symbol || !supply) {
+        showStatus('tokenStatus', 'Please fill in Name, Symbol, and Total Supply', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/admin/log-token?name=${encodeURIComponent(name)}&symbol=${encodeURIComponent(symbol)}&decimals=${decimals}&total_supply=${encodeURIComponent(supply)}&tx_hash=${encodeURIComponent(txHash)}`,
+          { method: 'POST' }
+        );
+        const data = await response.json();
+        showStatus('tokenStatus', `✅ Token "${name}" added to cache!`, 'success');
+        document.getElementById('tokenName').value = '';
+        document.getElementById('tokenSymbol').value = '';
+        document.getElementById('tokenDecimals').value = '8';
+        document.getElementById('tokenSupply').value = '';
+        document.getElementById('tokenTxHash').value = '';
+      } catch (e) {
+        showStatus('tokenStatus', `❌ Error: ${e.message}`, 'error');
+      }
+    }
+
+    async function addNFT() {
+      const tokenId = document.getElementById('nftTokenId').value;
+      const metadataUri = document.getElementById('nftMetadataUri').value;
+      const recipient = document.getElementById('nftRecipient').value;
+      const collection = document.getElementById('nftCollection').value;
+      const txHash = document.getElementById('nftTxHash').value;
+
+      if (!tokenId || !metadataUri) {
+        showStatus('nftStatus', 'Please fill in Token ID and Metadata URI', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/admin/log-nft?token_id=${encodeURIComponent(tokenId)}&metadata_uri=${encodeURIComponent(metadataUri)}&recipient=${encodeURIComponent(recipient)}&collection=${encodeURIComponent(collection)}&tx_hash=${encodeURIComponent(txHash)}`,
+          { method: 'POST' }
+        );
+        const data = await response.json();
+        showStatus('nftStatus', `✅ NFT #${tokenId} added to cache!`, 'success');
+        document.getElementById('nftTokenId').value = '';
+        document.getElementById('nftMetadataUri').value = '';
+        document.getElementById('nftRecipient').value = '';
+        document.getElementById('nftCollection').value = 'custom';
+        document.getElementById('nftTxHash').value = '';
+      } catch (e) {
+        showStatus('nftStatus', `❌ Error: ${e.message}`, 'error');
+      }
+    }
+
+    async function addCollection() {
+      const name = document.getElementById('collectionName').value;
+      const symbol = document.getElementById('collectionSymbol').value;
+      const baseUri = document.getElementById('collectionBaseUri').value;
+      const mintPrice = document.getElementById('collectionMintPrice').value;
+      const txHash = document.getElementById('collectionTxHash').value;
+
+      if (!name || !symbol || !baseUri) {
+        showStatus('collectionStatus', 'Please fill in Name, Symbol, and Base URI', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/admin/log-collection?name=${encodeURIComponent(name)}&symbol=${encodeURIComponent(symbol)}&base_uri=${encodeURIComponent(baseUri)}&mint_price=${encodeURIComponent(mintPrice)}&tx_hash=${encodeURIComponent(txHash)}`,
+          { method: 'POST' }
+        );
+        const data = await response.json();
+        showStatus('collectionStatus', `✅ Collection "${name}" added to cache!`, 'success');
+        document.getElementById('collectionName').value = '';
+        document.getElementById('collectionSymbol').value = '';
+        document.getElementById('collectionBaseUri').value = '';
+        document.getElementById('collectionMintPrice').value = '0';
+        document.getElementById('collectionTxHash').value = '';
+      } catch (e) {
+        showStatus('collectionStatus', `❌ Error: ${e.message}`, 'error');
+      }
+    }
+
+    async function viewCache() {
+      try {
+        const response = await fetch('/api/portfolio?public_key=test');
+        const data = await response.json();
+        const cache = {
+          tokens: data.custom_tokens || [],
+          nfts: data.custom_nfts || [],
+          collections: data.custom_collections || [],
+        };
+        const contents = document.getElementById('cacheContents');
+        contents.textContent = JSON.stringify(cache, null, 2);
+        contents.style.display = 'block';
+      } catch (e) {
+        alert('Error loading cache: ' + e.message);
+      }
+    }
+
+    function showStatus(elementId, message, type) {
+      const status = document.getElementById(elementId);
+      status.textContent = message;
+      status.className = 'status ' + type;
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>
