@@ -127,21 +127,39 @@ async def get_portfolio(public_key: str = None):
     # Contract packages count for context
     raw_pkgs = await _mcp_call("get_account_contract_packages", {"accountIdentifier": raw_hash})
     contracts_count = 0
+    deployed_contracts = []
     if raw_pkgs:
         try:
             parsed = json.loads(raw_pkgs)
             pkgs = parsed if isinstance(parsed, list) else (parsed.get("data", parsed.get("results", [])) if isinstance(parsed, dict) else [])
             contracts_count = len(pkgs or [])
+            # Also include contract details in response
+            for pkg in (pkgs or [])[:20]:
+                if isinstance(pkg, dict):
+                    deployed_contracts.append({
+                        "contract_package": pkg.get("contract_package", pkg.get("package_hash", "")),
+                        "version": pkg.get("version", pkg.get("contract_version", 0)),
+                        "timestamp": pkg.get("timestamp", ""),
+                        "type": pkg.get("type", "contract"),
+                    })
         except (json.JSONDecodeError, TypeError):
             contracts_count = 2
 
     custom_cache = get_cache()
+
+    # Add logging to help debug
+    import sys
+    print(f"DEBUG: recent_deploys = {recent_deploys}", file=sys.stderr)
+    print(f"DEBUG: raw_pkgs response = {raw_pkgs}", file=sys.stderr)
+    print(f"DEBUG: custom_cache = {custom_cache}", file=sys.stderr)
+
     return {
         "wallet": wallet_hash,
         "cspr_balance": cspr_balance,
         "tokens": cep18_tokens,
         "nfts": nfts,
         "recent_deploys": recent_deploys,
+        "deployed_contracts": deployed_contracts,
         "contracts": max(contracts_count, 1),
         "custom_tokens": custom_cache.get("tokens", []),
         "custom_nfts": custom_cache.get("nfts", []),
