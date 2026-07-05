@@ -644,13 +644,34 @@
       if (!key) { showConnectPrompt(); return; }
       document.getElementById('loading').style.display = 'block';
       document.getElementById('content')?.remove();
+
+      console.log('Loading portfolio for:', key);
+
       try {
-        const res = await fetch('/api/portfolio?public_key=' + encodeURIComponent(key));
+        const url = '/api/portfolio?public_key=' + encodeURIComponent(key);
+        console.log('Fetching from:', url);
+
+        const res = await fetch(url);
+        console.log('Response status:', res.status);
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('API error:', res.status, errorText);
+          document.getElementById('loading').innerHTML = '<p style="color:#f87171">API Error: ' + res.status + '<br>' + errorText + '</p>';
+          return;
+        }
+
         const data = await res.json();
+        console.log('Portfolio data received:', data);
+        console.log('Custom tokens:', data.custom_tokens);
+        console.log('Custom NFTs:', data.custom_nfts);
+        console.log('Custom collections:', data.custom_collections);
+
         portfolioData = data;
         render(data);
       } catch (e) {
-        document.getElementById('loading').innerHTML = '<p style="color:#f87171">Failed to load portfolio. Is the server running?</p>';
+        console.error('Portfolio load error:', e);
+        document.getElementById('loading').innerHTML = '<p style="color:#f87171">Failed to load portfolio: ' + e.message + '<br>Is the server running?</p>';
       }
     }
 
