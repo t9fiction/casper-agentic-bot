@@ -6,5 +6,5 @@ smart-contract/.cargo/
 smart-contract/resources/
 smart-contract/secret_key.pem
 smart-contract/target/
-smart-contract/wasm/
+# smart-contract/wasm/ — removed from gitignore; wasm files are tracked for tests/Docker
 .venv/

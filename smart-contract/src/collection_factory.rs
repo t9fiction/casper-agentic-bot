@@ -207,3 +207,11 @@ pub enum Error {
     NotOwner = 3,
     NotListed = 4,
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn placeholder() {
+        assert!(true);
+    }
+}

@@ -3,7 +3,7 @@ from pathlib import Path
 from langchain_core.tools import tool
 from .mcp_client import list_tools, call_tool
 from .contract_registry import register_deploy, update_contract, get_contract, list_contracts as _list_registry, get_active_contract
-from .portfolio_cache import log_token_deploy, log_nft_mint, log_collection_create
+from .portfolio_cache import log_token_deploy, log_nft_mint, log_collection_create, update_status, get_cache as _get_portfolio_cache
 from .account_analyzer import analyze_account_impl
 
 _PROJECT_ROOT = Path(__file__).parent.parent
@@ -152,8 +152,14 @@ def _log_contract_call(entry_point: str, session_args: dict, tx_hash: str, contr
         )
     elif entry_point == "mint_nft":
         recipient = args.get("recipient", args.get("buyer", wallet))
+        # token_id is returned by the contract, not in args; infer from cache state
+        token_id = args.get("token_id", "")
+        if not token_id:
+            cache = _get_portfolio_cache()
+            nft_count = len(cache.get("nfts", []))
+            token_id = str(nft_count)
         log_nft_mint(
-            token_id=args.get("token_id", ""),
+            token_id=token_id,
             metadata_uri=args.get("metadata_uri", ""),
             recipient=recipient,
             contract_name=contract_name,
@@ -161,6 +167,11 @@ def _log_contract_call(entry_point: str, session_args: dict, tx_hash: str, contr
             collection=contract_name or "nft_marketplace",
         )
     elif entry_point == "create_collection":
+        # collection_id is returned by the contract; infer from cache state
+        collection_id = args.get("collection_id", "")
+        if not collection_id:
+            cache = _get_portfolio_cache()
+            collection_id = str(len(cache.get("collections", [])))
         log_collection_create(
             name=args.get("name", ""),
             symbol=args.get("symbol", ""),
@@ -168,6 +179,7 @@ def _log_contract_call(entry_point: str, session_args: dict, tx_hash: str, contr
             mint_price=str(args.get("mint_price", "0")),
             tx_hash=tx_hash,
             contract_name=contract_name or "collections",
+            collection_id=collection_id,
             creator=wallet,
         )
 
@@ -493,6 +505,8 @@ async def verify_contract_deployment(tx_hash: str):
                     contract_hash=contract_key or None,
                     status="active",
                 )
+                # Also update portfolio cache entries referencing this tx_hash
+                update_status(tx_hash, "confirmed")
                 parts = []
                 if package_hash:
                     parts.append(f"Package: {package_hash}")

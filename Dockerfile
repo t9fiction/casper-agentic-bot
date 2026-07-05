@@ -17,6 +17,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ src/
+COPY portfolio_cache.json contracts_registry.json ./
+COPY smart-contract/wasm/ smart-contract/wasm/
+
+RUN mkdir -p /app/conversations
 
 EXPOSE 8000
 

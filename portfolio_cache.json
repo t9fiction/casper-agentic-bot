@@ -10,8 +10,30 @@
       "recipient": "account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5",
       "status": "pending",
       "timestamp": "2026-07-05T11:24:06.490828"
+    },
+    {
+      "name": "Token Nine",
+      "symbol": "T9",
+      "decimals": 8,
+      "total_supply": "1000000",
+      "tx_hash": "d67806d4b1c2e3b22b2b7d11e1a22db1285d3306f91beb5e60e663519b93f3af",
+      "contract_name": "token_factory",
+      "recipient": "account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5",
+      "status": "pending",
+      "timestamp": "2026-07-05T18:42:07.133592+00:00"
     }
   ],
-  "nfts": [],
+  "nfts": [
+    {
+      "token_id": "0",
+      "metadata_uri": "ipfs://bafkreia6y3mogrxwu64fq65ldu6apaiz5sior42dsvgo6jid2rtd7vyqli",
+      "collection": "NFTGator",
+      "contract_name": "NFTGator",
+      "recipient": "account-hash-bc8fd4d028d97b170faa45ed46f3ce40441a7ee7ce01a958d307b1b3ec9615b7",
+      "tx_hash": "791b71acf633337648056fa762da5ce0315eb82eed6e68137823d9fbc482c1c5",
+      "status": "pending",
+      "timestamp": "2026-07-05T18:16:12.050073+00:00"
+    }
+  ],
   "collections": []
 }

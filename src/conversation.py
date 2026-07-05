@@ -1,6 +1,6 @@
 """Conversation memory manager for storing chat history per session."""
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
 
@@ -14,7 +14,7 @@ class ConversationMessage:
     def __init__(self, role: str, content: str, timestamp: Optional[str] = None):
         self.role = role  # "user" or "assistant"
         self.content = content
-        self.timestamp = timestamp or datetime.utcnow().isoformat()
+        self.timestamp = timestamp or datetime.now(timezone.utc).isoformat()
 
     def to_dict(self) -> dict:
         return {

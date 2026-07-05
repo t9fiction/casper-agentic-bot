@@ -217,7 +217,20 @@ Examples:
 
 async def build_agent():
     tools_desc = await _get_tools_description()
-    system_prompt = SYSTEM_PROMPT.format(network=NETWORK, tools_description=tools_desc)
+    # De-escape double braces in prompt template first (they were for .format())
+    # then substitute placeholders (avoids .format() issues with MCP tool braces)
+    prompt_template = (
+        SYSTEM_PROMPT
+        .replace("{{", "\x00LB\x00")
+        .replace("}}", "\x00RB\x00")
+    )
+    system_prompt = (
+        prompt_template
+        .replace("{network}", NETWORK)
+        .replace("{tools_description}", tools_desc)
+        .replace("\x00LB\x00", "{")
+        .replace("\x00RB\x00", "}")
+    )
 
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
     tools = [query_casper_blockchain, send_cspr_transfer, analyze_account, call_contract_entry_point, deploy_contract, verify_contract_deployment, list_deployed_contracts]

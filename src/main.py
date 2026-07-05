@@ -3,6 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .agent import run_agent
@@ -12,6 +13,14 @@ from .portfolio_cache import get_cache
 load_dotenv()
 
 app = FastAPI(title="Casper Agentic Bot")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 NETWORK = os.getenv("CASPER_NETWORK", "testnet")
 
@@ -164,9 +173,14 @@ async def get_portfolio(public_key: str = None):
 
     # Contract packages count for context
     # IMPORTANT: get_account_contract_packages requires publicKey (not accountIdentifier!)
-    # Derive public key from account hash or use from wallet connection
-    # For now, use the configured one from SECRET_KEY
-    public_key = "0202c92a8225d3026af3a7a499718b77b8d77c45e452c402ae5a66979529cc885b14"  # Derived from SECRET_KEY
+    # Derive public key from wallet connection or env var
+    # If user provided a public_key param, use it; otherwise fall back to env var
+    pk_from_env = os.getenv("PUBLIC_KEY", "")
+    public_key = public_key or pk_from_env
+    if not public_key:
+        # Derive from account hash by trying both formats
+        raw = _strip_hash_prefix(wallet_hash)
+        public_key = raw  # Use the raw hash as fallback
     raw_pkgs = await _mcp_call("get_account_contract_packages", {"publicKey": public_key})
     contracts_count = 0
     deployed_contracts = []

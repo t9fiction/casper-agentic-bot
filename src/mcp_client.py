@@ -24,7 +24,7 @@ async def get_session():
         "X-Casper-Network": _API_NETWORK,
     }
 
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=30.0) as client:
         async with streamable_http_client(
             MCP_URL, http_client=client
         ) as streams:
