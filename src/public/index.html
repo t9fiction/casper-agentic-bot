@@ -978,6 +978,16 @@
       return html;
     }
 
+    // Generate or retrieve session ID from localStorage
+    function getSessionId() {
+      let sessionId = localStorage.getItem('casper_session_id');
+      if (!sessionId) {
+        sessionId = 'session-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('casper_session_id', sessionId);
+      }
+      return sessionId;
+    }
+
     async function sendMessage() {
       const msg = messageInput.value.trim();
       if (!msg) return;
@@ -990,14 +1000,18 @@
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: msg }),
+          body: JSON.stringify({
+            message: msg,
+            session_id: getSessionId()  // Include session ID for conversation history
+          }),
         });
         const data = await res.json();
         removeLoading();
         if (data.error) addMessage('Error: ' + data.error, 'bot');
         else addMessage(data.reply, 'bot');
-      } catch {
+      } catch (e) {
         removeLoading();
+        console.error('Chat error:', e);
         addMessage('Error: Could not reach the server.', 'bot');
       }
       sendBtn.disabled = false;

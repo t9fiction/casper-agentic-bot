@@ -215,11 +215,52 @@ async def build_agent():
     return agent
 
 
-async def run_agent(user_input: str):
+async def run_agent(user_input: str, session_id: str = "default"):
+    """
+    Run the agent with conversation history.
+
+    Args:
+        user_input: The user's message
+        session_id: Optional session ID for conversation history (defaults to "default")
+
+    Returns:
+        The agent's response
+    """
+    from .conversation import get_conversation
+
+    # Get the conversation session
+    conv = get_conversation(session_id)
+
+    # Add user message to history
+    conv.add_message("user", user_input)
+
+    # Get the agent
     agent = await build_agent()
-    result = await agent.ainvoke({"messages": [("human", user_input)]})
-    messages = result.get("messages", [])
-    for msg in reversed(messages):
-        if hasattr(msg, "type") and msg.type == "ai" and msg.content:
-            return msg.content
-    return "I couldn't process that request."
+
+    # Build message history for the agent
+    # Include last 10 turns to avoid context window explosion
+    messages = conv.get_last_n_messages(20)
+
+    try:
+        result = await agent.ainvoke({"messages": messages})
+        response_messages = result.get("messages", [])
+
+        # Extract the assistant's response
+        assistant_response = None
+        for msg in reversed(response_messages):
+            if hasattr(msg, "type") and msg.type == "ai" and msg.content:
+                assistant_response = msg.content
+                break
+
+        if not assistant_response:
+            assistant_response = "I couldn't process that request."
+
+        # Add assistant response to history
+        conv.add_message("assistant", assistant_response)
+
+        return assistant_response
+
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        conv.add_message("assistant", error_msg)
+        raise

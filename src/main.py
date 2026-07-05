@@ -18,6 +18,7 @@ NETWORK = os.getenv("CASPER_NETWORK", "testnet")
 
 class ChatRequest(BaseModel):
     message: str
+    session_id: str = "default"  # Optional session ID for conversation history
 
 
 @app.get("/")
@@ -43,10 +44,41 @@ async def chat(req: ChatRequest):
     if not req.message.strip():
         return JSONResponse({"error": "Message is required"}, status_code=400)
     try:
-        reply = await run_agent(req.message)
+        reply = await run_agent(req.message, session_id=req.session_id)
         return {"reply": reply}
     except Exception as e:
+        import sys
+        print(f"DEBUG: Chat error: {e}", file=sys.stderr)
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/conversation/{session_id}")
+async def get_conversation(session_id: str):
+    """Get conversation history for a session."""
+    from .conversation import get_conversation
+    conv = get_conversation(session_id)
+    return {
+        "session_id": session_id,
+        "messages": [m.to_dict() for m in conv.messages],
+        "summary": conv.summary(),
+    }
+
+
+@app.post("/api/conversation/{session_id}/clear")
+async def clear_conversation(session_id: str):
+    """Clear conversation history for a session."""
+    from .conversation import get_conversation
+    conv = get_conversation(session_id)
+    conv.clear()
+    return {"status": "cleared", "session_id": session_id}
+
+
+@app.get("/api/conversations")
+async def list_conversations():
+    """List all active conversation sessions."""
+    from .conversation import list_conversations
+    sessions = list_conversations()
+    return {"sessions": sessions, "count": len(sessions)}
 
 
 def _strip_hash_prefix(h: str) -> str:
