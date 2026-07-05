@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Debug Helper</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0A0E1A;
+      color: #FFFFFF;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color: #00D4C8; margin-bottom: 20px; }
+    .section {
+      background: #111827;
+      border: 1px solid #1E293B;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .section h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #00D4C8;
+      border-bottom: 1px solid #1E293B;
+      padding-bottom: 10px;
+    }
+    .info-box {
+      background: #0D1B2A;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #A0AEC0;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    button {
+      background: #00D4C8;
+      color: #0A0E1A;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 5px 5px 5px 0;
+    }
+    button:hover { background: #00A89E; }
+    .warning { color: #F87171; }
+    .success { color: #1DB954; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Portfolio Debug Helper</h1>
+
+    <div class="section">
+      <h2>Wallet Connection Status</h2>
+      <div id="walletStatus"></div>
+      <button onclick="checkWallet()">Check Wallet</button>
+      <button onclick="connectWallet()">Connect Wallet</button>
+    </div>
+
+    <div class="section">
+      <h2>Environment Check</h2>
+      <div id="envStatus"></div>
+      <button onclick="checkEnv()">Check Backend Config</button>
+    </div>
+
+    <div class="section">
+      <h2>Portfolio Data</h2>
+      <button onclick="fetchPortfolio()">Fetch Portfolio Data</button>
+      <div id="portfolioData"></div>
+    </div>
+
+    <div class="section">
+      <h2>Troubleshooting Steps</h2>
+      <ol style="line-height: 1.8;">
+        <li><strong>Check Wallet Connection:</strong>
+          <ul>
+            <li>Click "Check Wallet" to verify extension is installed</li>
+            <li>Click "Connect Wallet" to establish connection</li>
+            <li>Check console (F12) for any errors</li>
+          </ul>
+        </li>
+        <li><strong>Verify Backend Config:</strong>
+          <ul>
+            <li>Click "Check Backend Config" to verify server configuration</li>
+            <li>Ensure WALLET_ACCOUNT_HASH is set in .env</li>
+          </ul>
+        </li>
+        <li><strong>Check Portfolio Data:</strong>
+          <ul>
+            <li>Click "Fetch Portfolio Data" to see what the API returns</li>
+            <li>Look at "deployed_contracts" array - should show contracts from blockchain</li>
+            <li>Look at "custom_tokens" - should show tokens logged via chat</li>
+          </ul>
+        </li>
+        <li><strong>If Still Empty:</strong>
+          <ul>
+            <li>Check if contracts were actually deployed to testnet</li>
+            <li>Verify CSPR_CLOUD_API_KEY is valid</li>
+            <li>Go to <a href="/admin" style="color:#00D4C8;">Admin Dashboard</a> to manually add deployments</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <h2>Quick Links</h2>
+      <ul style="line-height: 2;">
+        <li><a href="/" style="color:#00D4C8;">Chat Page</a></li>
+        <li><a href="/portfolio" style="color:#00D4C8;">Portfolio</a></li>
+        <li><a href="/admin" style="color:#00D4C8;">Admin Dashboard</a></li>
+        <li><a href="http://localhost:8000/api/health" style="color:#00D4C8;">Health Check</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let walletPk = '';
+
+    function getWalletAPI() {
+      if (window.CasperWalletProvider) return window.CasperWalletProvider;
+      if (window.casper) return window.casper;
+      if (window.casperWallet) return window.casperWallet;
+      if (window.CasperWallet) return window.CasperWallet;
+      return null;
+    }
+
+    function checkWallet() {
+      const wallet = getWalletAPI();
+      const status = document.getElementById('walletStatus');
+      if (!wallet) {
+        status.innerHTML = '<p class="warning">❌ Wallet extension not found. Please install Casper Wallet.</p>';
+        return;
+      }
+
+      let api = wallet;
+      if (typeof wallet === 'function') {
+        api = wallet();
+      }
+
+      status.innerHTML = `
+        <p class="success">✅ Wallet extension detected</p>
+        <div class="info-box">API Type: ${typeof wallet}
+${typeof wallet === 'function' ? 'Called as function' : 'Used directly'}
+Has requestConnection: ${typeof api?.requestConnection === 'function' ? 'Yes' : 'No'}
+Has getActivePublicKey: ${typeof api?.getActivePublicKey === 'function' ? 'Yes' : 'No'}</div>
+      `;
+    }
+
+    async function connectWallet() {
+      const wallet = getWalletAPI();
+      if (!wallet) {
+        alert('Wallet not found');
+        return;
+      }
+
+      try {
+        let api = wallet;
+        if (typeof wallet === 'function') {
+          api = wallet();
+        }
+
+        const status = document.getElementById('walletStatus');
+        status.innerHTML = '<p>Requesting connection...</p>';
+
+        const res = await api.requestConnection();
+        if (res === true) {
+          const pk = await api.getActivePublicKey();
+          walletPk = pk;
+          status.innerHTML = `
+            <p class="success">✅ Wallet connected!</p>
+            <div class="info-box">Public Key:
+${pk}</div>
+          `;
+          fetchPortfolio(); // Auto-fetch after connect
+        } else {
+          status.innerHTML = '<p class="warning">❌ Connection rejected or failed</p>';
+        }
+      } catch (e) {
+        document.getElementById('walletStatus').innerHTML = `<p class="warning">❌ Error: ${e.message}</p>`;
+      }
+    }
+
+    async function checkEnv() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        const status = document.getElementById('envStatus');
+        status.innerHTML = `
+          <p class="success">✅ Backend is running</p>
+          <div class="info-box">Network: ${data.network || 'testnet'}
+Status: ${data.status}</div>
+        `;
+      } catch (e) {
+        document.getElementById('envStatus').innerHTML = `<p class="warning">❌ Backend error: ${e.message}</p>`;
+      }
+    }
+
+    async function fetchPortfolio() {
+      if (!walletPk) {
+        alert('Please connect wallet first');
+        return;
+      }
+
+      const status = document.getElementById('portfolioData');
+      status.innerHTML = '<p>Loading...</p>';
+
+      try {
+        const res = await fetch(`/api/portfolio?public_key=${encodeURIComponent(walletPk)}`);
+        const data = await res.json();
+
+        status.innerHTML = `
+          <div class="info-box"><b>Response:</b>
+${JSON.stringify(data, null, 2)}</div>
+          <p style="margin-top: 10px; font-size: 12px; color: #A0AEC0;">
+            <b>Key Counts:</b><br>
+            • Deployed Contracts: ${(data.deployed_contracts || []).length}<br>
+            • CEP-18 Tokens: ${(data.tokens || []).length}<br>
+            • NFTs: ${(data.nfts || []).length}<br>
+            • Custom Tokens (Cache): ${(data.custom_tokens || []).length}<br>
+            • Custom NFTs (Cache): ${(data.custom_nfts || []).length}<br>
+            • Custom Collections (Cache): ${(data.custom_collections || []).length}
+          </p>
+        `;
+      } catch (e) {
+        status.innerHTML = `<p class="warning">❌ Error: ${e.message}</p>`;
+      }
+    }
+
+    // Auto-check on load
+    window.addEventListener('load', () => {
+      checkWallet();
+      checkEnv();
+    });
+  </script>
+</body>
+</html>

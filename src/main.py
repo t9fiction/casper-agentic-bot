@@ -33,6 +33,10 @@ async def portfolio_page():
 async def admin_page():
     return FileResponse(Path(__file__).parent / "public" / "admin.html")
 
+@app.get("/debug")
+async def debug_page():
+    return FileResponse(Path(__file__).parent / "public" / "debug.html")
+
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
