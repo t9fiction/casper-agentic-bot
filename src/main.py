@@ -167,6 +167,48 @@ async def get_portfolio(public_key: str = None):
     }
 
 
+@app.post("/api/admin/log-token")
+async def log_token_manual(name: str, symbol: str, decimals: int = 8, total_supply: str = "0", tx_hash: str = ""):
+    """Manual endpoint to add a token to the portfolio cache"""
+    from .portfolio_cache import log_token_deploy
+    log_token_deploy(
+        name=name,
+        symbol=symbol,
+        decimals=decimals,
+        total_supply=total_supply,
+        tx_hash=tx_hash,
+        recipient=os.getenv("WALLET_ACCOUNT_HASH", ""),
+    )
+    return {"status": "token logged", "name": name}
+
+@app.post("/api/admin/log-nft")
+async def log_nft_manual(token_id: str, metadata_uri: str, recipient: str = "", collection: str = "custom", tx_hash: str = ""):
+    """Manual endpoint to add an NFT to the portfolio cache"""
+    from .portfolio_cache import log_nft_mint
+    log_nft_mint(
+        token_id=token_id,
+        metadata_uri=metadata_uri,
+        recipient=recipient or os.getenv("WALLET_ACCOUNT_HASH", ""),
+        contract_name=collection,
+        tx_hash=tx_hash,
+        collection=collection,
+    )
+    return {"status": "nft logged", "token_id": token_id}
+
+@app.post("/api/admin/log-collection")
+async def log_collection_manual(name: str, symbol: str, base_uri: str, mint_price: str = "0", tx_hash: str = ""):
+    """Manual endpoint to add a collection to the portfolio cache"""
+    from .portfolio_cache import log_collection_create
+    log_collection_create(
+        name=name,
+        symbol=symbol,
+        base_uri=base_uri,
+        mint_price=mint_price,
+        tx_hash=tx_hash,
+        collection_id="",
+    )
+    return {"status": "collection logged", "name": name}
+
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "network": NETWORK}
