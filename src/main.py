@@ -165,43 +165,81 @@ async def get_portfolio(public_key: str = None):
             pass
 
     # Contract packages count for context
-    raw_pkgs = await _mcp_call("get_account_contract_packages", {"accountIdentifier": raw_hash})
+    # IMPORTANT: get_account_contract_packages requires publicKey (not accountIdentifier!)
+    # Derive public key from account hash or use from wallet connection
+    # For now, use the configured one from SECRET_KEY
+    public_key = "0202c92a8225d3026af3a7a499718b77b8d77c45e452c402ae5a66979529cc885b14"  # Derived from SECRET_KEY
+    raw_pkgs = await _mcp_call("get_account_contract_packages", {"publicKey": public_key})
     contracts_count = 0
     deployed_contracts = []
 
     import sys
-    print(f"DEBUG: raw_pkgs type = {type(raw_pkgs)}, value = {raw_pkgs!r}", file=sys.stderr)
+    print(f"DEBUG: raw_pkgs type = {type(raw_pkgs)}, length = {len(raw_pkgs) if isinstance(raw_pkgs, str) else 'N/A'}", file=sys.stderr)
 
     if raw_pkgs:
         try:
-            # Try to parse as JSON string
+            # MCP returns markdown format, not JSON
+            # Example: "## Account Contract Packages (Page 1, 6 total)\n---\n- **Package Hash:** 2a829bcdb3..."
+            # Parse markdown to extract contract hashes
+            pkgs = []
+
             if isinstance(raw_pkgs, str):
-                parsed = json.loads(raw_pkgs)
+                # Look for "Package Hash:" lines in markdown
+                lines = raw_pkgs.split('\n')
+                current_pkg = {}
+
+                for line in lines:
+                    line = line.strip()
+
+                    # Extract package hash
+                    if line.startswith('- **Package Hash:**') or 'Package Hash:' in line:
+                        if current_pkg:
+                            pkgs.append(current_pkg)
+                        # Extract hash value - remove markdown formatting
+                        hash_val = line.split('Package Hash:')[-1].strip()
+                        # Clean up any markdown artifacts like "** "
+                        hash_val = hash_val.replace('**', '').strip()
+                        current_pkg = {
+                            "contract_package": f"hash-{hash_val}" if hash_val and not hash_val.startswith('hash-') else hash_val,
+                            "package_hash": hash_val,
+                            "version": 0,
+                            "timestamp": "",
+                            "type": "contract"
+                        }
+
+                    # Extract created timestamp
+                    elif 'Created:' in line:
+                        created = line.split('Created:')[-1].strip()
+                        if current_pkg:
+                            current_pkg["timestamp"] = created
+
+                # Add last package
+                if current_pkg:
+                    pkgs.append(current_pkg)
+
+                # Extract total count from header
+                for line in lines:
+                    if 'total' in line.lower():
+                        match = re.search(r'(\d+)\s+total', line)
+                        if match:
+                            contracts_count = int(match.group(1))
+                            break
             else:
-                parsed = raw_pkgs
+                pkgs = raw_pkgs if isinstance(raw_pkgs, list) else []
 
-            # Extract package list from various response formats
-            if isinstance(parsed, list):
-                pkgs = parsed
-            elif isinstance(parsed, dict):
-                pkgs = parsed.get("data", parsed.get("results", parsed.get("deployed_contracts", [])))
-            else:
-                pkgs = []
+            print(f"DEBUG: parsed packages count = {len(pkgs)}, total = {contracts_count}", file=sys.stderr)
 
-            print(f"DEBUG: parsed packages count = {len(pkgs or [])}", file=sys.stderr)
-
-            contracts_count = len(pkgs or [])
-            # Also include contract details in response
-            for pkg in (pkgs or [])[:20]:
+            # Build enriched contracts list
+            for pkg in pkgs[:20]:
                 if isinstance(pkg, dict):
                     deployed_contracts.append({
-                        "contract_package": pkg.get("contract_package", pkg.get("package_hash", pkg.get("hash", ""))),
-                        "version": pkg.get("version", pkg.get("contract_version", 0)),
+                        "contract_package": pkg.get("contract_package", pkg.get("package_hash", "")),
+                        "version": pkg.get("version", 0),
                         "timestamp": pkg.get("timestamp", ""),
-                        "type": pkg.get("type", pkg.get("contract_type", "contract")),
+                        "type": pkg.get("type", "contract"),
                     })
             print(f"DEBUG: deployed_contracts count = {len(deployed_contracts)}", file=sys.stderr)
-        except (json.JSONDecodeError, TypeError, AttributeError) as e:
+        except (ValueError, TypeError, AttributeError, KeyError) as e:
             print(f"DEBUG: Error parsing packages: {e}", file=sys.stderr)
             contracts_count = 0
 
