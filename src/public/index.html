@@ -1050,6 +1050,7 @@
 
     function getWalletAPI() {
       // Try multiple wallet API locations
+      if (window.CasperWalletProvider) return window.CasperWalletProvider;
       if (window.casper) return window.casper;
       if (window.casperWallet) return window.casperWallet;
       if (window.CasperWallet) return window.CasperWallet;
