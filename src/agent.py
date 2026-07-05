@@ -1,5 +1,5 @@
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langchain_core.messages import SystemMessage
 
 from .tools import query_casper_blockchain, send_cspr_transfer, analyze_account, call_contract_entry_point, deploy_contract, verify_contract_deployment, list_deployed_contracts, _get_tools_description
@@ -43,10 +43,6 @@ TRANSFERS: When user asks to send CSPR, use send_cspr_transfer tool.
 
 ACCOUNT ANALYSIS: When user asks about account details or biggest transactions, use analyze_account tool.
 - Pass the full account hash including "account-hash-" prefix
-
-MONITORING: When user asks to monitor/watch/track an account (e.g. "watch this whale account", "monitor this address"):
-- Direct them to the /monitor page in the web UI
-- Available at: /monitor from the navigation bar
 
 TOKEN FACTORY CONTRACT: There is a Token Factory contract deployed on {network}.
 It lets you deploy and manage custom tokens. Use call_contract_entry_point to interact with it.
@@ -105,10 +101,10 @@ When user says "mint a CyberPunk NFT to my account":
   The metadata_uri is auto-generated from the collection's base_uri + token_id + ".json"
 
 When user says "create another collection called BoredApes":
-  Step 1: call_contract_entry_point(entry_point="create_collection", session_args={{"name": "BoredApes", "symbol": "BAPE", "mint_price": "5000000000"}}, contract_name="collection_factory")
+  Step 1: call_contract_entry_point(entry_point="create_collection", session_args={{"name": "BoredApes", "symbol": "BAPE", "mint_price": "5000000000"}}, contract_name="collections")
 
 When user says "list all collections":
-  Step 1: call_contract_entry_point(entry_point="total_collections", session_args={{}}, contract_name="collection_factory")
+  Step 1: call_contract_entry_point(entry_point="total_collections", session_args={{}}, contract_name="collections")
   Step 2: iterate and call collection_info for each
 
 When minting NFTs, generate descriptive metadata URIs like "ipfs://QmX.../nft-1.json".
@@ -204,11 +200,10 @@ async def build_agent():
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
     tools = [query_casper_blockchain, send_cspr_transfer, analyze_account, call_contract_entry_point, deploy_contract, verify_contract_deployment, list_deployed_contracts]
 
-    agent = create_react_agent(
+    agent = create_agent(
         model=llm,
         tools=tools,
-        prompt=SystemMessage(content=system_prompt),
-        version="v2",
+        system_prompt=SystemMessage(content=system_prompt),
     )
     return agent
 

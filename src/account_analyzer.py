@@ -34,7 +34,5 @@ async def analyze_account_impl(account_hash: str):
     lines.append("--- How to check transfers ---")
     lines.append(f"To see all transfers for this account, use your CSPR.cloud dashboard at:")
     lines.append(f"https://testnet.cspr.live/account/{account_hash}")
-    lines.append(f"")
-    lines.append(f"Or monitor the account with: 'Monitor {account_hash} for transactions above 100 CSPR'")
 
     return "\n".join(lines)

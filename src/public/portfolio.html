@@ -96,6 +96,62 @@
       color: #0A0E1A;
       font-weight: 600;
     }
+    header .wallet-btn {
+      margin-left: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 6px 16px;
+      font-size: 12px; font-weight: 500;
+      color: var(--accent-teal);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .2s;
+      display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    header .wallet-btn:hover {
+      border-color: var(--accent-teal);
+      background: rgba(0, 212, 200, 0.06);
+    }
+    header .wallet-btn.connected {
+      color: var(--accent-green);
+      border-color: rgba(29, 185, 84, 0.3);
+    }
+    header .wallet-btn .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent-green);
+    }
+    .connect-prompt {
+      text-align: center;
+      padding: 80px 20px;
+    }
+    .connect-prompt h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    .connect-prompt p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .connect-prompt button {
+      background: var(--accent-teal);
+      color: #0A0E1A;
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 12px 32px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .2s;
+    }
+    .connect-prompt button:hover {
+      background: var(--accent-teal-dim);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0, 212, 200, 0.3);
+    }
     header .network-badge {
       display: flex; align-items: center; gap: 6px;
       margin-left: 12px;
@@ -362,8 +418,8 @@
     <div class="nav-links">
       <a href="/">Chat</a>
       <a href="/portfolio" class="active">Portfolio</a>
-      <a href="/monitor">Monitor</a>
     </div>
+    <button class="wallet-btn" id="walletBtn" onclick="toggleWallet()">Connect Wallet</button>
     <div class="network-badge"><span class="dot"></span>Casper Testnet</div>
   </header>
 
@@ -376,12 +432,115 @@
 
   <script>
     let portfolioData = null;
+    let walletPk = localStorage.getItem('casper_public_key') || '';
+    let walletExtensionDetected = false;
 
-    async function loadPortfolio() {
+    /* ─── Wallet UI ─── */
+    function updateWalletUI() {
+      const btn = document.getElementById('walletBtn');
+      if (walletPk) {
+        const short = walletPk.length > 16 ? walletPk.slice(0, 8) + '...' + walletPk.slice(-4) : walletPk;
+        btn.innerHTML = `<span class="dot"></span> ${short}`;
+        btn.className = 'wallet-btn connected';
+        btn.title = 'Click to disconnect';
+      } else {
+        btn.innerHTML = 'Connect Wallet';
+        btn.className = 'wallet-btn';
+        btn.title = '';
+      }
+    }
+
+    async function onWalletReady() {
+      walletExtensionDetected = true;
+      const storedPk = localStorage.getItem('casper_public_key');
+      if (storedPk && window.casperWallet) {
+        try {
+          const connected = await window.casperWallet.isConnected();
+          if (connected) {
+            const activePk = await window.casperWallet.getActivePublicKey();
+            if (activePk) {
+              walletPk = activePk;
+              localStorage.setItem('casper_public_key', activePk);
+              updateWalletUI();
+              loadPortfolio(walletPk);
+              return;
+            }
+          }
+        } catch { /* fall through */ }
+      }
+      walletPk = '';
+      localStorage.removeItem('casper_public_key');
+      updateWalletUI();
+      showConnectPrompt();
+    }
+
+    window.addEventListener('casperWallet:ready', onWalletReady);
+
+    window.addEventListener('casperWallet:connected', function(e) {
+      const pk = e.detail && (e.detail.publicKey || e.detail.activeKey);
+      if (pk) {
+        walletPk = pk;
+        localStorage.setItem('casper_public_key', pk);
+        updateWalletUI();
+        loadPortfolio(walletPk);
+      }
+    });
+
+    window.addEventListener('casperWallet:disconnected', function() {
+      walletPk = '';
+      localStorage.removeItem('casper_public_key');
+      updateWalletUI();
+      showConnectPrompt();
+    });
+
+    async function toggleWallet() {
+      if (walletPk) {
+        walletPk = '';
+        localStorage.removeItem('casper_public_key');
+        updateWalletUI();
+        showConnectPrompt();
+        return;
+      }
+      if (!window.casperWallet) {
+        alert('Please install the Casper Wallet browser extension to connect.');
+        return;
+      }
+      try {
+        const res = await window.casperWallet.requestConnection();
+        if (res && res.publicKey) {
+          walletPk = res.publicKey;
+          localStorage.setItem('casper_public_key', walletPk);
+          updateWalletUI();
+          loadPortfolio(walletPk);
+        }
+      } catch (e) {
+        console.error('Wallet connection failed:', e);
+      }
+    }
+
+    function showConnectPrompt() {
+      const app = document.getElementById('app');
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content')?.remove();
+      const prompt = document.createElement('div');
+      prompt.id = 'content';
+      prompt.className = 'connect-prompt';
+      prompt.innerHTML = `
+        <h2>🔌 Wallet Not Connected</h2>
+        <p>Connect your Casper Wallet to view your portfolio.</p>
+        <button onclick="toggleWallet()">Connect Wallet</button>
+      `;
+      app.appendChild(prompt);
+    }
+
+    /* ─── Portfolio ─── */
+    async function loadPortfolio(pk) {
+      const key = pk || walletPk;
+      if (!key) { showConnectPrompt(); return; }
       document.getElementById('loading').style.display = 'block';
       document.getElementById('content')?.remove();
       try {
-        const res = await fetch('/api/portfolio');
+        const res = await fetch('/api/portfolio?public_key=' + encodeURIComponent(key));
         const data = await res.json();
         portfolioData = data;
         render(data);
@@ -418,7 +577,7 @@
       // Refresh
       const refreshBar = document.createElement('div');
       refreshBar.className = 'refresh-bar';
-      refreshBar.innerHTML = `<button class="refresh-btn" onclick="loadPortfolio()" id="refreshBtn">⟳ Refresh</button>`;
+      refreshBar.innerHTML = `<button class="refresh-btn" onclick="loadPortfolio('${walletPk}')" id="refreshBtn">⟳ Refresh</button>`;
       content.appendChild(refreshBar);
 
       // Summary cards
@@ -455,25 +614,33 @@
       const customTokensList = data.custom_tokens || [];
       const customTokensSection = document.createElement('div');
       customTokensSection.className = 'section';
+
+      let tokenDetailsHtml = '';
+      if (customTokensList.length > 0) {
+        tokenDetailsHtml = `<div class="asset-grid">${customTokensList.map((t, idx) => `
+          <div class="asset-card">
+            <div class="row">
+              <span class="name">${escapeHtml(t.name || 'Unknown')}</span>
+              ${t.symbol ? `<span class="symbol">${escapeHtml(t.symbol)}</span>` : ''}
+            </div>
+            <div class="balance token-bal">${escapeHtml(t.total_supply || '')}</div>
+            <div class="meta">${escapeHtml(t.decimals || 0)} decimals · total supply</div>
+            <div class="meta">Token ID: ${idx}</div>
+            <div class="meta">Tx: ${t.tx_hash ? escapeHtml(t.tx_hash.slice(0, 16)) + '...' : 'pending'}</div>
+            <div class="meta" style="color:${t.status === 'pending' ? 'var(--accent-pink)' : 'var(--accent-green)'}">${t.status}</div>
+            <button onclick="copyToClipboard('Token ID: ${idx}')" style="margin-top:8px;width:100%;padding:6px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-secondary);cursor:pointer;font-size:11px;font-weight:500;">📋 Copy ID</button>
+          </div>
+        `).join('')}</div>`;
+      }
+
       customTokensSection.innerHTML = `
         <div class="section-title">
           🪙 Token Factory Tokens
           <span class="count">${customTokensList.length}</span>
         </div>
         ${customTokensList.length === 0
-          ? '<div class="empty-state"><h4>No custom tokens deployed</h4><p>Use the chat to deploy tokens via the Token Factory contract.</p></div>'
-          : `<div class="asset-grid">${customTokensList.map(t => `
-            <div class="asset-card">
-              <div class="row">
-                <span class="name">${escapeHtml(t.name || 'Unknown')}</span>
-                ${t.symbol ? `<span class="symbol">${escapeHtml(t.symbol)}</span>` : ''}
-              </div>
-              <div class="balance token-bal">${escapeHtml(t.total_supply || '')}</div>
-              <div class="meta">${escapeHtml(t.decimals || 0)} decimals · total supply</div>
-              <div class="meta">Tx: ${t.tx_hash ? escapeHtml(t.tx_hash.slice(0, 16)) + '...' : 'pending'}</div>
-              <div class="meta" style="color:${t.status === 'pending' ? 'var(--accent-pink)' : 'var(--accent-green)'}">${t.status}</div>
-            </div>
-          `).join('')}</div>`
+          ? '<div class="empty-state"><h4>No custom tokens deployed</h4><p>Use the modal in Chat to deploy tokens via the Token Factory contract.</p></div>'
+          : tokenDetailsHtml
         }
       `;
       content.appendChild(customTokensSection);
@@ -561,23 +728,31 @@
       const nftsSection = document.createElement('div');
       nftsSection.className = 'section';
       const nftsList = data.nfts || [];
+
+      let nftDetailsHtml = '';
+      if (nftsList.length > 0) {
+        nftDetailsHtml = `<div class="asset-grid">${nftsList.map(n => `
+          <div class="asset-card">
+            <div class="row">
+              <span class="name">NFT #${n.token_id || '?'}</span>
+              ${n.collection ? `<span class="symbol">${escapeHtml(n.collection)}</span>` : ''}
+            </div>
+            <div class="balance nft-bal">${escapeHtml(n.metadata_uri ? n.metadata_uri.slice(0, 40) + '...' : 'No metadata')}</div>
+            <div class="meta">Token ID: ${n.token_id || '?'}</div>
+            ${n.listed ? `<div class="badge-status listed">Listed for ${n.price ? formatCspr(n.price) + ' CSPR' : 'sale'}</div>` : '<div class="badge-status unlisted">Not Listed</div>'}
+            <button onclick="copyToClipboard('NFT ID: ${n.token_id}')" style="margin-top:8px;width:100%;padding:6px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-secondary);cursor:pointer;font-size:11px;font-weight:500;">📋 Copy ID</button>
+          </div>
+        `).join('')}</div>`;
+      }
+
       nftsSection.innerHTML = `
         <div class="section-title">
           🖼️ NFTs
           <span class="count">${nftsList.length}</span>
         </div>
         ${nftsList.length === 0
-          ? '<div class="empty-state"><h4>No NFTs yet</h4><p>Use the chat to mint NFTs via the NFT Marketplace contract.</p></div>'
-          : `<div class="asset-grid">${nftsList.map(n => `
-            <div class="asset-card">
-              <div class="row">
-                <span class="name">NFT #${n.token_id || '?'}</span>
-                ${n.collection ? `<span class="symbol">${escapeHtml(n.collection)}</span>` : ''}
-              </div>
-              <div class="balance nft-bal">${escapeHtml(n.metadata_uri ? n.metadata_uri.slice(0, 45) + '...' : 'No metadata')}</div>
-              <div class="meta">Token ID: ${n.token_id || '?'}</div>
-            </div>
-          `).join('')}</div>`
+          ? '<div class="empty-state"><h4>No NFTs yet</h4><p>Use the modal in Chat to mint NFTs via the NFT Marketplace contract.</p></div>'
+          : nftDetailsHtml
         }
       `;
       content.appendChild(nftsSection);
@@ -631,7 +806,30 @@
       }
     }
 
-    loadPortfolio();
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard: ' + text);
+      }).catch(() => {
+        alert('Failed to copy to clipboard');
+      });
+    }
+
+    /* ─── Init ─── */
+    updateWalletUI();
+    if (window.casperWallet) {
+      onWalletReady();
+    } else {
+      window.addEventListener('casperWallet:ready', onWalletReady);
+      let attempts = 0;
+      const poll = setInterval(function() {
+        if (window.casperWallet) {
+          clearInterval(poll);
+          onWalletReady();
+        }
+        attempts++;
+        if (attempts >= 20) clearInterval(poll);
+      }, 250);
+    }
   </script>
 </body>
 </html>

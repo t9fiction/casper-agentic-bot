@@ -1,4 +1,4 @@
-import os, asyncio, subprocess, json, re
+import os, json, re
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -6,7 +6,6 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from .agent import run_agent
-from .monitor import monitor_service
 from .mcp_client import call_tool
 from .portfolio_cache import get_cache
 
@@ -21,22 +20,6 @@ class ChatRequest(BaseModel):
     message: str
 
 
-class MonitorRequest(BaseModel):
-    account_hash: str
-    label: str = ""
-    min_amount_cspr: float = 0
-
-
-@app.on_event("startup")
-async def startup():
-    asyncio.create_task(monitor_service.run())
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    monitor_service.stop()
-
-
 @app.get("/")
 async def index():
     return FileResponse(Path(__file__).parent / "public" / "index.html")
@@ -45,11 +28,6 @@ async def index():
 @app.get("/portfolio")
 async def portfolio_page():
     return FileResponse(Path(__file__).parent / "public" / "portfolio.html")
-
-
-@app.get("/monitor")
-async def monitor_page():
-    return FileResponse(Path(__file__).parent / "public" / "monitor.html")
 
 
 @app.post("/api/chat")
@@ -73,15 +51,18 @@ async def _mcp_call(name: str, args: dict = None):
         return None
 
 def _parse_nums(text: str) -> str:
+    match = re.search(r"([\d.]+)\s*CSPR", text or "")
+    if match:
+        return match.group(1)
     nums = re.findall(r"[\d.]+", text or "")
     return nums[0] if nums else "0"
 
 
 @app.get("/api/portfolio")
-async def get_portfolio():
-    wallet_hash = os.getenv("WALLET_ACCOUNT_HASH", "")
+async def get_portfolio(public_key: str = None):
+    wallet_hash = public_key or os.getenv("WALLET_ACCOUNT_HASH", "")
     if not wallet_hash:
-        return JSONResponse({"error": "WALLET_ACCOUNT_HASH not configured"}, status_code=400)
+        return JSONResponse({"error": "WALLET_ACCOUNT_HASH not configured and no public_key provided"}, status_code=400)
 
     raw_hash = _strip_hash_prefix(wallet_hash)
 
@@ -171,25 +152,3 @@ async def get_portfolio():
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "network": NETWORK}
-
-
-@app.get("/api/monitors")
-async def list_monitors():
-    return {"monitors": monitor_service.list_monitors()}
-
-
-@app.post("/api/monitors")
-async def add_monitor(req: MonitorRequest):
-    key = monitor_service.add_monitor(req.account_hash, req.label, req.min_amount_cspr)
-    return {"monitor_id": key, "status": "active"}
-
-
-@app.delete("/api/monitors/{monitor_id}")
-async def remove_monitor(monitor_id: str):
-    monitor_service.remove_monitor(monitor_id)
-    return {"status": "removed"}
-
-
-@app.get("/api/monitors/alerts")
-async def get_alerts():
-    return {"alerts": monitor_service.get_alerts(clear=True)}

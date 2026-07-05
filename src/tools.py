@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 from .mcp_client import list_tools, call_tool
 from .contract_registry import register_deploy, update_contract, get_contract, list_contracts as _list_registry, get_active_contract
 from .portfolio_cache import log_token_deploy, log_nft_mint, log_collection_create
+from .account_analyzer import analyze_account_impl
 
 _PROJECT_ROOT = Path(__file__).parent.parent
 _WASM_DIR = _PROJECT_ROOT / "smart-contract" / "wasm"
@@ -326,7 +327,6 @@ async def analyze_account(account_hash: str):
     Args:
         account_hash: The account hash (e.g. "account-hash-...")
     """
-    from .account_analyzer import analyze_account_impl
     return await analyze_account_impl(account_hash)
 
 
@@ -433,28 +433,62 @@ async def verify_contract_deployment(tx_hash: str):
             return f"Query failed: {result.stderr.strip() or result.stdout.strip()}"
 
         data = json.loads(result.stdout)
-        tx_result = data.get("result", {}).get("execution_result", {})
+        exec_info = data.get("result", {}).get("execution_info", {})
+        tx_result = exec_info.get("execution_result", {})
         if isinstance(tx_result, dict) and tx_result.get("Version2"):
             exec_data = tx_result["Version2"]
             error = exec_data.get("error_message")
             if error:
                 return f"❌ Deploy failed: {error}"
 
-            # Mark the contract as active in registry
+            # Extract package_hash and contract_hash from effects
+            effects = exec_data.get("effects", [])
+            package_hash = ""
+            contract_key = ""
+            named_key = ""
+            access_uref_addr = ""
+
             registry = _list_registry()
             matched_name = None
             for name, info in registry.items():
                 if info.get("tx_hash") == tx_hash:
                     matched_name = name
+                    named_key = info.get("named_key", name)
                     break
 
+            for effect in effects:
+                kind = effect.get("kind", {})
+                if isinstance(kind, dict) and "AddKeys" in kind:
+                    entries = kind["AddKeys"]
+                    if isinstance(entries, list):
+                        for entry in entries:
+                            entry_name = entry.get("name", "")
+                            entry_key = entry.get("key", "")
+                            if entry_name == named_key:
+                                contract_key = entry_key
+                            elif entry_name.endswith("_access_token") and entry_key.startswith("uref-"):
+                                access_uref_addr = entry_key[5:].split("-")[0]
+
+            if access_uref_addr:
+                package_hash = f"hash-{access_uref_addr}"
+
             if matched_name:
-                named_key = registry[matched_name]["named_key"]
-                update_contract(matched_name, status="active")
-                registered = os.getenv("WALLET_ACCOUNT_HASH", "")
+                update_contract(
+                    matched_name,
+                    package_hash=package_hash or None,
+                    contract_hash=contract_key or None,
+                    status="active",
+                )
+                parts = []
+                if package_hash:
+                    parts.append(f"Package: {package_hash}")
+                if contract_key:
+                    parts.append(f"Contract: {contract_key}")
+                hash_info = "\n".join(parts)
                 return (
                     f"✅ Contract '{matched_name}' deployed successfully!\n"
                     f"Named key: {named_key}\n"
+                    f"{hash_info}\n"
                     f"You can now use call_contract_entry_point with "
                     f"contract_name=\"{matched_name}\" to interact with it."
                 )
