@@ -570,11 +570,24 @@
         console.log('Calling requestConnection()...');
         const res = await api.requestConnection();
         console.log('Connection response:', res);
-        if (res && res.publicKey) {
-          walletPk = res.publicKey;
+        console.log('Response type:', typeof res);
+        console.log('Response keys:', res ? Object.keys(res) : 'null');
+
+        // Try different response formats
+        let pk = res?.publicKey || res?.public_key || res?.pk || res?.key;
+        if (!pk && typeof res === 'string') {
+          pk = res;  // Response might be the public key directly
+        }
+
+        if (pk) {
+          walletPk = pk;
+          console.log('Public key extracted:', pk);
           localStorage.setItem('casper_public_key', walletPk);
           updateWalletUI();
           loadPortfolio(walletPk);
+        } else {
+          console.error('No public key in response. Full response:', JSON.stringify(res));
+          alert('Wallet connected but could not extract public key');
         }
       } catch (e) {
         console.error('Wallet connection failed:', e);
