@@ -1068,12 +1068,18 @@
       }
       console.log('Wallet API detected:', wallet);
 
+      // CasperWalletProvider is a function - call it to get the actual API
+      let api = wallet;
+      if (typeof wallet === 'function') {
+        api = wallet();
+      }
+
       const storedPk = localStorage.getItem('casper_public_key');
-      if (storedPk && wallet) {
+      if (storedPk && api) {
         try {
-          const connected = await wallet.isConnected();
+          const connected = await api.isConnected?.();
           if (connected) {
-            const activePk = await wallet.getActivePublicKey();
+            const activePk = await api.getActivePublicKey?.();
             if (activePk) {
               walletPk = activePk;
               localStorage.setItem('casper_public_key', activePk);
@@ -1141,8 +1147,19 @@
       }
 
       try {
+        console.log('Wallet API type:', typeof wallet);
+        console.log('Wallet methods:', Object.keys(wallet));
+
+        // CasperWalletProvider is a function that returns the actual API
+        // We need to call it to get the actual wallet object
+        let api = wallet;
+        if (typeof wallet === 'function') {
+          console.log('Wallet is a function, calling it...');
+          api = wallet();
+        }
+
         console.log('Calling requestConnection()...');
-        const res = await wallet.requestConnection();
+        const res = await api.requestConnection();
         console.log('Connection response:', res);
         if (res && res.publicKey) {
           walletPk = res.publicKey;
