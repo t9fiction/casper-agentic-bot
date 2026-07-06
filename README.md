@@ -1,3 +1,13 @@
+---
+title: Casper Agentic Bot
+emoji: 🤖
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Casper Agentic Bot
 
 **AI-powered chatbot** for the Casper blockchain — ask questions in plain English, send transfers, analyze accounts, and monitor whale activity. Built with LangGraph + GPT-4o-mini.
