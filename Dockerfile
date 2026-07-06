@@ -5,6 +5,8 @@ RUN rustup default nightly && \
 
 FROM python:3.13-slim-bookworm
 
+RUN useradd -m -u 1000 user
+
 COPY --from=builder /usr/local/cargo/bin/casper-client /usr/local/bin/casper-client
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -16,14 +18,17 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ src/
-COPY portfolio_cache.json contracts_registry.json ./
-COPY smart-contract/wasm/ smart-contract/wasm/
+COPY --chown=user src/ src/
+COPY --chown=user portfolio_cache.json contracts_registry.json ./
+COPY --chown=user smart-contract/wasm/ smart-contract/wasm/
 
-RUN mkdir -p /app/conversations
+RUN mkdir -p /app/conversations && chown user:user /app/conversations
+RUN chown user:user /app
+
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 7860
-
-ENV PYTHONUNBUFFERED=1
 
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "7860"]
