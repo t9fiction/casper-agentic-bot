@@ -20,7 +20,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=user src/ src/
 COPY --chown=user portfolio_cache.json contracts_registry.json ./
-COPY --chown=user smart-contract/wasm/ smart-contract/wasm/
+RUN mkdir -p /app/smart-contract/wasm && \
+    curl -sL https://raw.githubusercontent.com/t9fiction/casper-agentic-bot/1bf69ff227c705dc28b73e30e3f6ab4dba40b96c/smart-contract/wasm/TokenFactory.wasm -o /app/smart-contract/wasm/TokenFactory.wasm && \
+    curl -sL https://raw.githubusercontent.com/t9fiction/casper-agentic-bot/1bf69ff227c705dc28b73e30e3f6ab4dba40b96c/smart-contract/wasm/NftMarketplace.wasm -o /app/smart-contract/wasm/NftMarketplace.wasm && \
+    curl -sL https://raw.githubusercontent.com/t9fiction/casper-agentic-bot/1bf69ff227c705dc28b73e30e3f6ab4dba40b96c/smart-contract/wasm/CollectionFactory.wasm -o /app/smart-contract/wasm/CollectionFactory.wasm && \
+    curl -sL https://raw.githubusercontent.com/t9fiction/casper-agentic-bot/1bf69ff227c705dc28b73e30e3f6ab4dba40b96c/smart-contract/wasm/Greeter.wasm -o /app/smart-contract/wasm/Greeter.wasm && \
+    chown user:user /app/smart-contract/wasm/*
 
 RUN mkdir -p /app/conversations && chown user:user /app/conversations
 RUN chown user:user /app

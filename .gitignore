@@ -8,3 +8,4 @@ smart-contract/secret_key.pem
 smart-contract/target/
 .venv/
 conversations/
+smart-contract/wasm/
