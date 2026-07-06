@@ -98,9 +98,9 @@ async def _mcp_call(name: str, args: dict = None):
         return None
 
 def _parse_nums(text: str) -> str:
-    match = re.search(r"([\d.]+)\s*CSPR", text or "")
+    match = re.search(r"([\d,.-]+)\s*CSPR", text or "")
     if match:
-        return match.group(1)
+        return match.group(1).replace(",", "")
     nums = re.findall(r"[\d.]+", text or "")
     return nums[0] if nums else "0"
 
