@@ -21,12 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=user src/ src/
 COPY --chown=user portfolio_cache.json contracts_registry.json ./
 RUN mkdir -p /app/smart-contract/wasm && \
-    python3 -c "
-import urllib.request
-base = 'https://github.com/t9fiction/casper-agentic-bot/releases/download/wasm-v1'
-for f in ['TokenFactory.wasm', 'NftMarketplace.wasm', 'CollectionFactory.wasm']:
-    urllib.request.urlretrieve(f'{base}/{f}', f'/app/smart-contract/wasm/{f}')
-" && \
+    python3 -c "import urllib.request;b='https://github.com/t9fiction/casper-agentic-bot/releases/download/wasm-v1';[urllib.request.urlretrieve(f'{b}/{f}',f'/app/smart-contract/wasm/{f}') for f in ['TokenFactory.wasm','NftMarketplace.wasm','CollectionFactory.wasm']]" && \
     chown user:user /app/smart-contract/wasm/*
 
 RUN mkdir -p /app/conversations && chown user:user /app/conversations
