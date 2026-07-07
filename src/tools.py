@@ -53,6 +53,10 @@ def _get_secret_key_path() -> str:
     key_value = os.getenv("SECRET_KEY")
     if not key_value:
         return ""
+    # Handle literal \n in env var (common in HF Secrets / .env files)
+    key_value = key_value.replace("\\n", "\n")
+    # Strip surrounding quotes if present
+    key_value = key_value.strip().strip("'\"")
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False)
     tmp.write(key_value)
     tmp.close()
