@@ -9,23 +9,27 @@ async def analyze_account_impl(account_hash: str):
     if not account_hash or not account_hash.startswith("account-hash-"):
         return "Error: invalid account hash. Must start with 'account-hash-'."
 
+    raw_hash = account_hash.removeprefix("account-hash-")
+
     try:
-        account_info = await call_tool("GetAccountInfo", {"account_hash": account_hash})
+        account_info = await call_tool("get_account_info", {"accountIdentifier": raw_hash})
     except Exception as e:
         account_info = f"Error fetching account info: {e}"
 
     try:
-        balance_raw = await call_tool("GetAccountBalance", {"account_hash": account_hash})
+        balance_raw = await call_tool("get_account_balance", {"accountIdentifier": raw_hash})
     except Exception:
         balance_raw = "N/A"
 
     # Extract balance number
-    balance_match = re.search(r"([\d.]+)", str(balance_raw))
+    balance_match = re.search(r"([\d.]+)\s*CSPR", str(balance_raw))
+    if not balance_match:
+        balance_match = re.search(r"([\d.]+)", str(balance_raw))
     balance_str = balance_match.group(1) if balance_match else balance_raw
 
-    # Scan recent transfers via get_account_deploys
+    # Scan recent deploys
     try:
-        deploys_raw = await call_tool("GetAccountDeploys", {"account_hash": account_hash, "page": 1, "pageSize": 20})
+        deploys_raw = await call_tool("get_account_deploys", {"publicKey": raw_hash, "page": 1, "pageSize": 20})
     except Exception:
         deploys_raw = ""
 
