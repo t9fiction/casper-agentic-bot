@@ -1,10 +1,46 @@
-import json, os, subprocess, tempfile, time
+import json, os, subprocess, tempfile, time, re
 from pathlib import Path
 from langchain_core.tools import tool
 from .mcp_client import list_tools, call_tool
 from .contract_registry import register_deploy, update_contract, get_contract, list_contracts as _list_registry, get_active_contract
 from .portfolio_cache import log_token_deploy, log_nft_mint, log_collection_create, update_status, get_cache as _get_portfolio_cache
 from .account_analyzer import analyze_account_impl
+
+
+_ACCOUNT_HASH_CACHE: dict[str, str] = {}
+
+
+async def resolve_account_async(account: str) -> str:
+    """Return account-hash-xxx given either a public key or account hash.
+
+    Uses MCP get_account_info to resolve public keys to account hashes.
+    Wraps sync resolve_account for tools that can't use async.
+    """
+    account = account.strip()
+    if account.startswith("account-hash-"):
+        return account
+    if account in _ACCOUNT_HASH_CACHE:
+        return _ACCOUNT_HASH_CACHE[account]
+    try:
+        result = await call_tool("get_account_info", {"accountIdentifier": account})
+        if result:
+            m = re.search(r"\*\*Account Hash:\*\*\s*([a-f0-9]{64})", result)
+            if m:
+                ah = "account-hash-" + m.group(1)
+                _ACCOUNT_HASH_CACHE[account] = ah
+                return ah
+    except Exception:
+        pass
+    return account
+
+
+def resolve_account(account: str) -> str:
+    """Synchronous fallback — for public keys, we return as-is and let
+    the receiving code handle it. Only strips account-hash- prefix if already one."""
+    account = account.strip()
+    if account.startswith("account-hash-"):
+        return account
+    return account
 
 _PROJECT_ROOT = Path(__file__).parent.parent
 _WASM_DIR = _PROJECT_ROOT / "smart-contract" / "wasm"
@@ -84,11 +120,14 @@ async def send_cspr_transfer(recipient: str, amount_in_cspr: float, transfer_id:
     The agent calls this when the user wants to transfer CSPR.
     Uses the secret key configured on the server.
 
+    Accepts either an account hash or public key for recipient.
+
     Args:
-        recipient: The recipient's account hash (e.g. "account-hash-...")
+        recipient: The recipient's account hash (e.g. "account-hash-...") or public key (e.g. "0202c92a...")
         amount_in_cspr: Amount of CSPR to send (e.g. 5.5 for 5.5 CSPR)
         transfer_id: Optional user-defined identifier (uint64)
     """
+    recipient = await resolve_account_async(recipient)
     secret_key_path = _get_secret_key_path()
     if not secret_key_path:
         return "Error: Secret key not found. Set the SECRET_KEY environment variable to your PEM key content."
@@ -280,6 +319,10 @@ async def call_contract_entry_point(entry_point: str, session_args: dict = None,
     _NFT_TOKEN_TYPE = "u64"
     _BASE_TOKEN_TYPE = "u32"
 
+    for arg_name in ("recipient", "buyer", "owner"):
+        if arg_name in session_args and isinstance(session_args[arg_name], str):
+            session_args[arg_name] = await resolve_account_async(session_args[arg_name])
+
     for arg_name, arg_value in session_args.items():
         if arg_name == "token_id":
             cl_type = _NFT_TOKEN_TYPE if entry_point in _NFT_ENTRY_POINTS else _BASE_TOKEN_TYPE
@@ -350,10 +393,13 @@ async def analyze_account(account_hash: str):
     Analyzes an account by querying on-chain data and scanning recent blocks
     for the largest transfers sent and received.
 
+    Accepts either an account hash or a public key — will auto-convert.
+
     Args:
-        account_hash: The account hash (e.g. "account-hash-...")
+        account_hash: The account hash (e.g. "account-hash-...") or public key (e.g. "0202c92a...")
     """
-    return await analyze_account_impl(account_hash)
+    resolved = await resolve_account_async(account_hash)
+    return await analyze_account_impl(resolved)
 
 
 @tool

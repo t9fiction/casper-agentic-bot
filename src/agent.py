@@ -5,13 +5,36 @@ from langchain_core.messages import SystemMessage
 from .tools import query_casper_blockchain, send_cspr_transfer, analyze_account, call_contract_entry_point, deploy_contract, verify_contract_deployment, list_deployed_contracts, _get_tools_description
 from .mcp_client import list_tools
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 NETWORK = "testnet"
+DEFAULT_ACCOUNT_HASH = os.getenv("WALLET_ACCOUNT_HASH", "")
+DEFAULT_PUBLIC_KEY = os.getenv("PUBLIC_KEY", "0202c92a8225d3026af3a7a499718b77b8d77c45e452c402ae5a66979529cc885b14")
 
 SYSTEM_PROMPT = """You are Casper Agentic Bot, an AI assistant for the Casper blockchain ({network}).
 
 You have access to blockchain tools via MCP and built-in capabilities:
 
 {tools_description}
+
+DEFAULT ACCOUNT: This bot's wallet account hash is **{default_account}**.
+When the user says "my account", "my balance", "current account", "my wallet",
+or any similar phrase without specifying an account hash — USE THIS DEFAULT ACCOUNT.
+Do NOT ask the user for their account hash in these cases. Just use the default.
+
+For "my tokens" / "my NFTs" — same thing, use the default account hash.
+
+If the user explicitly provides a different account hash, use that instead.
+
+PUBLIC KEY → ACCOUNT HASH CONVERSION:
+The tools automatically convert public keys (e.g. "0202c92a...") to account hashes.
+So when a user gives you a public key, pass it directly to ANY tool that asks for an account.
+- analyze_account, send_cspr_transfer, call_contract_entry_point all accept public keys.
+- MCP tools with "accountIdentifier" parameter also accept public keys.
+You do NOT need to convert manually. Just pass the public key as-is.
 
 Rules:
 1. For greetings or non-blockchain questions, answer directly without calling tools.
@@ -49,7 +72,7 @@ TRANSFERS: When user asks to send CSPR, use send_cspr_transfer tool.
 - Always confirm the amount and recipient before sending
 
 ACCOUNT ANALYSIS: When user asks about account details or biggest transactions, use analyze_account tool.
-- Pass the full account hash including "account-hash-" prefix
+- Accepts account hash ("account-hash-...") OR public key ("0202c92a...") — auto-converts
 
 TOKEN FACTORY CONTRACT: There is a Token Factory contract deployed on {network}.
 It lets you deploy and manage custom tokens. Use call_contract_entry_point to interact with it.
@@ -191,7 +214,15 @@ Examples of multi-step workflows:
     Step 5: send CSPR to CyberPunks creator again
     Step 6: mint_nft on CyberPunks collection again
 
-Examples:
+Examples (account hash and public key both work):
+- "What's my balance?" -> query_casper_blockchain(tool_name="get_account_balance", arguments={{"accountIdentifier": "{default_account_raw}"}})
+- "Show my account info" -> query_casper_blockchain(tool_name="get_account_info", arguments={{"accountIdentifier": "{default_account_raw}"}})
+- "Check my account" -> analyze_account(account_hash="{default_account}")
+- "Check balance of token 0 for my account" -> call_contract_entry_point(entry_point="balance_of", session_args={{"token_id": 0, "owner": "{default_account}"}})
+- "Mint an NFT to my account" -> call_contract_entry_point(entry_point="mint_nft", session_args={{"metadata_uri": "ipfs://my-nft.json", "recipient": "{default_account}"}})
+- "Analyze this key 0202c92a..." -> analyze_account(account_hash="0202c92a...")
+- "Send 5 CSPR to 0202c92a..." -> send_cspr_transfer(recipient="0202c92a...", amount_in_cspr=5)
+- "What's the balance of public key 0202c92a..." -> query_casper_blockchain(tool_name="get_account_balance", arguments={{"accountIdentifier": "0202c92a..."}})
 - "Network status?" -> query_casper_blockchain(tool_name="get_network_status")
 - "Latest blocks" -> query_casper_blockchain(tool_name="get_latest_blocks", arguments={{"page": 1, "pageSize": 5}})
 - "Account 01abc..." -> query_casper_blockchain(tool_name="get_account_info", arguments={{"accountIdentifier": "01abc..."}})
@@ -224,10 +255,13 @@ async def build_agent():
         .replace("{{", "\x00LB\x00")
         .replace("}}", "\x00RB\x00")
     )
+    default_account_raw = DEFAULT_ACCOUNT_HASH.replace("account-hash-", "")
     system_prompt = (
         prompt_template
         .replace("{network}", NETWORK)
         .replace("{tools_description}", tools_desc)
+        .replace("{default_account}", DEFAULT_ACCOUNT_HASH)
+        .replace("{default_account_raw}", default_account_raw)
         .replace("\x00LB\x00", "{")
         .replace("\x00RB\x00", "}")
     )

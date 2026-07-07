@@ -107,10 +107,12 @@ def _parse_nums(text: str) -> str:
 
 @app.get("/api/portfolio")
 async def get_portfolio(public_key: str = None):
-    wallet_hash = public_key or os.getenv("WALLET_ACCOUNT_HASH", "")
-    if not wallet_hash:
+    from .tools import resolve_account_async
+    wallet_raw = public_key or os.getenv("WALLET_ACCOUNT_HASH", "")
+    if not wallet_raw:
         return JSONResponse({"error": "WALLET_ACCOUNT_HASH not configured and no public_key provided"}, status_code=400)
 
+    wallet_hash = await resolve_account_async(wallet_raw) if wallet_raw else ""
     raw_hash = _strip_hash_prefix(wallet_hash)
 
     # CSPR balance via MCP (lowercase tool name, accountIdentifier param, raw hex)
