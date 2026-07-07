@@ -57,6 +57,19 @@ def _get_secret_key_path() -> str:
     key_value = key_value.replace("\\n", "\n")
     # Strip surrounding quotes if present
     key_value = key_value.strip().strip("'\"")
+    # Ensure PEM has proper framing with newlines
+    if "-----BEGIN" not in key_value:
+        key_value = "-----BEGIN EC PRIVATE KEY-----\n" + key_value
+    if "-----END" not in key_value:
+        key_value = key_value + "\n-----END EC PRIVATE KEY-----"
+    # Make sure header and footer are on their own lines
+    lines = key_value.split("\n")
+    cleaned = []
+    for line in lines:
+        line = line.strip()
+        if line:
+            cleaned.append(line)
+    key_value = "\n".join(cleaned) + "\n"
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False)
     tmp.write(key_value)
     tmp.close()
