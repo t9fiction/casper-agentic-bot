@@ -496,124 +496,6 @@
     }
 
     /* ─── Modal Styles ─── */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn .2s ease;
-    }
-    .modal.active { display: flex; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .modal-content {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-card);
-      padding: 24px;
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      animation: slideUp .3s ease;
-    }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-header {
-      font-family: 'Poppins', sans-serif;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-close {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 24px;
-      cursor: pointer;
-      padding: 0;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-close:hover { color: var(--text-primary); }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-    .form-group label {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-    .form-group input, .form-group select, .form-group textarea {
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-input);
-      padding: 10px 14px;
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 13px;
-      transition: border-color .2s;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      outline: none;
-      border-color: var(--accent-teal);
-      box-shadow: 0 0 0 3px rgba(0, 212, 200, 0.08);
-    }
-    .form-group input::placeholder { color: var(--text-muted); }
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 20px;
-    }
-    .modal-actions button {
-      flex: 1;
-      padding: 10px 16px;
-      border-radius: var(--radius-input);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      border: none;
-      transition: all .2s;
-    }
-    .modal-actions .btn-primary {
-      background: var(--accent-teal);
-      color: #0A0E1A;
-    }
-    .modal-actions .btn-primary:hover {
-      background: var(--accent-teal-dim);
-    }
-    .modal-actions .btn-secondary {
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-    }
-    .modal-actions .btn-secondary:hover {
-      border-color: var(--accent-teal);
-      color: var(--accent-teal);
-    }
-    .error-message {
-      background: rgba(248, 113, 113, 0.1);
-      border: 1px solid rgba(248, 113, 113, 0.3);
-      color: #f87171;
-      padding: 10px 14px;
-      border-radius: var(--radius-input);
-      font-size: 13px;
-      margin-bottom: 12px;
-    }
     .success-message {
       background: rgba(29, 185, 84, 0.1);
       border: 1px solid rgba(29, 185, 84, 0.3);
@@ -682,8 +564,8 @@
         </p>
 
         <div class="hero-ctas">
-          <button class="btn-demo" onclick="sendSuggestion('Create a token called RocketCoin with symbol RCK, 8 decimals and 1 million supply')">🪙 Create Token</button>
-          <button class="btn-app" onclick="sendSuggestion('Mint an NFT with metadata URI ipfs://rocket-1.json to my wallet')">🖼️ Mint NFT →</button>
+          <button class="btn-demo" onclick="sendSuggestion('What is the current Casper network status?')">Network Status</button>
+          <button class="btn-app" onclick="sendSuggestion('Send 10 CSPR to account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Send 10 CSPR</button>
         </div>
       </div>
 
@@ -696,23 +578,18 @@
       <span class="sugg-label">Explore</span>
       <button onclick="sendSuggestion('What is the current Casper network status?')">Network Status</button>
       <button onclick="sendSuggestion('Show me the latest 5 blocks')">Latest Blocks</button>
-      <button onclick="sendSuggestion('Analyze account account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Analyze Wallet</button>
+      <button onclick="sendSuggestion('What is my balance')">My Balance</button>
+      <button onclick="sendSuggestion('Analyze my account')">Analyze Me</button>
       <span class="sugg-label">Tokens</span>
-      <button onclick="openModal('deployTokenModal')">🪙 Deploy Token</button>
-      <button onclick="openModal('transferTokenModal')">💸 Transfer</button>
-      <button onclick="openModal('checkBalanceModal')">💰 Check Balance</button>
+      <button onclick="sendSuggestion('Create a token called MyCoin with symbol MYC, 8 decimals and 1 million total supply')">Create Token</button>
+      <button onclick="sendSuggestion('Transfer 100 tokens of token 0 to account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Transfer</button>
+      <button onclick="sendSuggestion('What is the balance of token 0 for my account')">Balance</button>
       <span class="sugg-label">NFTs</span>
-      <button onclick="openModal('nftMarketplaceModal')">🖼️ NFT Marketplace</button>
+      <button onclick="sendSuggestion('Mint an NFT with metadata URI ipfs://my-nft.json to my account')">Mint NFT</button>
       <button onclick="sendSuggestion('How many NFTs have been minted?')">Total NFTs</button>
-      <span class="sugg-label">Collections</span>
-      <button onclick="openModal('createCollectionModal')">🏛️ Create Collection</button>
-      <button onclick="sendSuggestion('List all collections')">List Collections</button>
-      <span class="sugg-label">Contracts</span>
-      <button onclick="sendSuggestion('Deploy a new NFT contract called mycollection')">📦 Deploy Contract</button>
-      <button onclick="sendSuggestion('List my deployed contracts')">List Contracts</button>
       <span class="sugg-label">Actions</span>
       <button onclick="promptSendCSPR()">Send CSPR</button>
-      <button onclick="sendSuggestion('/portfolio')">📊 Portfolio</button>
+      <button onclick="sendSuggestion('/portfolio')">Portfolio</button>
     </div>
 
     <!-- Input -->
@@ -722,202 +599,6 @@
       </div>
       <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
-
-  <!-- ═════ MODALS ═════ -->
-
-  <!-- Token Deployment Modal -->
-  <div class="modal" id="deployTokenModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>🪙 Deploy Token</span>
-        <button class="modal-close" onclick="closeModal('deployTokenModal')">×</button>
-      </div>
-      <div id="deployTokenError"></div>
-      <form onsubmit="submitDeployToken(event)">
-        <div class="form-group">
-          <label>Token Name</label>
-          <input type="text" id="tokenName" placeholder="e.g., MyToken" required />
-        </div>
-        <div class="form-group">
-          <label>Symbol</label>
-          <input type="text" id="tokenSymbol" placeholder="e.g., MTK" required maxlength="10" />
-        </div>
-        <div class="form-group">
-          <label>Decimals</label>
-          <input type="number" id="tokenDecimals" placeholder="8" value="8" min="0" max="18" required />
-        </div>
-        <div class="form-group">
-          <label>Total Supply</label>
-          <input type="number" id="tokenSupply" placeholder="1000000" required min="1" />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeModal('deployTokenModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Deploy Token</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Token Transfer Modal -->
-  <div class="modal" id="transferTokenModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>💸 Transfer Token</span>
-        <button class="modal-close" onclick="closeModal('transferTokenModal')">×</button>
-      </div>
-      <div id="transferTokenError"></div>
-      <form onsubmit="submitTransferToken(event)">
-        <div class="form-group">
-          <label>Token ID</label>
-          <input type="number" id="transferTokenId" placeholder="0" required min="0" />
-        </div>
-        <div class="form-group">
-          <label>Recipient Account Hash</label>
-          <input type="text" id="transferRecipient" placeholder="account-hash-..." required />
-        </div>
-        <div class="form-group">
-          <label>Amount</label>
-          <input type="number" id="transferAmount" placeholder="1000" required min="1" />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeModal('transferTokenModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Transfer</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Check Token Balance Modal -->
-  <div class="modal" id="checkBalanceModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>💰 Check Token Balance</span>
-        <button class="modal-close" onclick="closeModal('checkBalanceModal')">×</button>
-      </div>
-      <div id="checkBalanceError"></div>
-      <form onsubmit="submitCheckBalance(event)">
-        <div class="form-group">
-          <label>Token ID</label>
-          <input type="number" id="balanceTokenId" placeholder="0" required min="0" />
-        </div>
-        <div class="form-group">
-          <label>Account Hash</label>
-          <input type="text" id="balanceAccount" placeholder="account-hash-..." required />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeModal('checkBalanceModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Check Balance</button>
-        </div>
-      </form>
-      <div id="balanceResult"></div>
-    </div>
-  </div>
-
-  <!-- NFT Marketplace Modal -->
-  <div class="modal" id="nftMarketplaceModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>🖼️ NFT Marketplace</span>
-        <button class="modal-close" onclick="closeModal('nftMarketplaceModal')">×</button>
-      </div>
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-        <button class="btn-tab active" onclick="switchNFTTab('mint')" style="flex:1;padding:8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-secondary);" id="nft-tab-mint">Mint</button>
-        <button class="btn-tab" onclick="switchNFTTab('list')" style="flex:1;padding:8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-secondary);" id="nft-tab-list">List for Sale</button>
-        <button class="btn-tab" onclick="switchNFTTab('buy')" style="flex:1;padding:8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-secondary);" id="nft-tab-buy">Buy</button>
-      </div>
-      <div id="nftError"></div>
-
-      <!-- Mint NFT Tab -->
-      <div id="nft-mint-tab" style="display:block;">
-        <form onsubmit="submitMintNFT(event)">
-          <div class="form-group">
-            <label>Metadata URI</label>
-            <input type="text" id="nftMetadataUri" placeholder="ipfs://Qm..." required />
-          </div>
-          <div class="form-group">
-            <label>Recipient Account Hash</label>
-            <input type="text" id="nftRecipient" placeholder="account-hash-..." required />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" onclick="closeModal('nftMarketplaceModal')">Close</button>
-            <button type="submit" class="btn-primary">Mint NFT</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- List NFT Tab -->
-      <div id="nft-list-tab" style="display:none;">
-        <form onsubmit="submitListNFT(event)">
-          <div class="form-group">
-            <label>NFT Token ID</label>
-            <input type="number" id="nftListTokenId" placeholder="0" required min="0" />
-          </div>
-          <div class="form-group">
-            <label>Price (in CSPR)</label>
-            <input type="number" id="nftListPrice" placeholder="100" required min="0.1" step="0.1" />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" onclick="closeModal('nftMarketplaceModal')">Close</button>
-            <button type="submit" class="btn-primary">List NFT</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Buy NFT Tab -->
-      <div id="nft-buy-tab" style="display:none;">
-        <form onsubmit="submitBuyNFT(event)">
-          <div class="form-group">
-            <label>NFT Token ID</label>
-            <input type="number" id="nftBuyTokenId" placeholder="0" required min="0" />
-          </div>
-          <div class="form-group">
-            <label>Buyer Account Hash</label>
-            <input type="text" id="nftBuyer" placeholder="account-hash-..." required />
-          </div>
-          <div class="form-group">
-            <label style="color:var(--accent-teal);">💡 Tip: The system will handle payment separately</label>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" onclick="closeModal('nftMarketplaceModal')">Close</button>
-            <button type="submit" class="btn-primary">Buy NFT</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Collection Creator Modal -->
-  <div class="modal" id="createCollectionModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>🏛️ Create Collection</span>
-        <button class="modal-close" onclick="closeModal('createCollectionModal')">×</button>
-      </div>
-      <div id="createCollectionError"></div>
-      <form onsubmit="submitCreateCollection(event)">
-        <div class="form-group">
-          <label>Collection Name</label>
-          <input type="text" id="collectionName" placeholder="My NFT Collection" required />
-        </div>
-        <div class="form-group">
-          <label>Symbol</label>
-          <input type="text" id="collectionSymbol" placeholder="MNC" required maxlength="10" />
-        </div>
-        <div class="form-group">
-          <label>Base URI</label>
-          <input type="text" id="collectionBaseUri" placeholder="ipfs://QmXXX/" required />
-        </div>
-        <div class="form-group">
-          <label>Mint Price (in CSPR)</label>
-          <input type="number" id="collectionMintPrice" placeholder="10" required min="0.1" step="0.1" />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeModal('createCollectionModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Create Collection</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <script>
     let hasInteracted = false;
@@ -1034,10 +715,6 @@
       messageInput.value = msg;
       sendMessage();
     }
-
-    messageInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') sendMessage();
-    });
 
     /* ─── Wallet Connect ─── */
     let walletPk = localStorage.getItem('casper_public_key') || '';
@@ -1233,177 +910,9 @@
       }
     })();
 
-    /* ─── Modal Functions ─── */
-    function openModal(modalId) {
-      document.getElementById(modalId).classList.add('active');
-      // Reset error messages
-      const errorEl = document.getElementById(modalId.replace('Modal', 'Error'));
-      if (errorEl) errorEl.innerHTML = '';
-    }
-
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.remove('active');
-    }
-
-    function showModalError(modalId, message) {
-      const errorEl = document.getElementById(modalId.replace('Modal', 'Error'));
-      if (errorEl) {
-        errorEl.innerHTML = `<div class="error-message">${escapeHtml(message)}</div>`;
-      }
-    }
-
-    function switchNFTTab(tab) {
-      ['mint', 'list', 'buy'].forEach(t => {
-        const tabEl = document.getElementById('nft-' + t + '-tab');
-        const btn = document.getElementById('nft-tab-' + t);
-        if (t === tab) {
-          tabEl.style.display = 'block';
-          btn.style.borderColor = 'var(--accent-teal)';
-          btn.style.color = 'var(--accent-teal)';
-        } else {
-          tabEl.style.display = 'none';
-          btn.style.borderColor = 'var(--border)';
-          btn.style.color = 'var(--text-secondary)';
-        }
-      });
-    }
-
-    /* Deploy Token */
-    function submitDeployToken(event) {
-      event.preventDefault();
-      const name = document.getElementById('tokenName').value.trim();
-      const symbol = document.getElementById('tokenSymbol').value.trim();
-      const decimals = parseInt(document.getElementById('tokenDecimals').value);
-      const supply = document.getElementById('tokenSupply').value.trim();
-
-      if (!name || !symbol || isNaN(decimals) || !supply) {
-        showModalError('deployTokenModal', 'Please fill in all fields');
-        return;
-      }
-
-      const msg = `Deploy a token called ${name} with symbol ${symbol}, ${decimals} decimals, and ${supply} total supply`;
-      messageInput.value = msg;
-      closeModal('deployTokenModal');
-      sendMessage();
-    }
-
-    /* Transfer Token */
-    function submitTransferToken(event) {
-      event.preventDefault();
-      const tokenId = parseInt(document.getElementById('transferTokenId').value);
-      const recipient = document.getElementById('transferRecipient').value.trim();
-      const amount = document.getElementById('transferAmount').value.trim();
-
-      if (isNaN(tokenId) || !recipient || !amount) {
-        showModalError('transferTokenModal', 'Please fill in all fields');
-        return;
-      }
-
-      if (!recipient.startsWith('account-hash-')) {
-        showModalError('transferTokenModal', 'Invalid account hash format');
-        return;
-      }
-
-      const msg = `Transfer ${amount} of token ${tokenId} to ${recipient}`;
-      messageInput.value = msg;
-      closeModal('transferTokenModal');
-      sendMessage();
-    }
-
-    /* Check Token Balance */
-    function submitCheckBalance(event) {
-      event.preventDefault();
-      const tokenId = parseInt(document.getElementById('balanceTokenId').value);
-      const account = document.getElementById('balanceAccount').value.trim();
-
-      if (isNaN(tokenId) || !account) {
-        showModalError('checkBalanceModal', 'Please fill in all fields');
-        return;
-      }
-
-      const msg = `What is the balance of token ${tokenId} for account ${account}?`;
-      messageInput.value = msg;
-      closeModal('checkBalanceModal');
-      sendMessage();
-    }
-
-    /* Mint NFT */
-    function submitMintNFT(event) {
-      event.preventDefault();
-      const uri = document.getElementById('nftMetadataUri').value.trim();
-      const recipient = document.getElementById('nftRecipient').value.trim();
-
-      if (!uri || !recipient) {
-        showModalError('nftMarketplaceModal', 'Please fill in all fields');
-        return;
-      }
-
-      const msg = `Mint an NFT with metadata URI ${uri} to ${recipient}`;
-      messageInput.value = msg;
-      closeModal('nftMarketplaceModal');
-      sendMessage();
-    }
-
-    /* List NFT */
-    function submitListNFT(event) {
-      event.preventDefault();
-      const tokenId = parseInt(document.getElementById('nftListTokenId').value);
-      const price = parseFloat(document.getElementById('nftListPrice').value);
-
-      if (isNaN(tokenId) || isNaN(price) || price <= 0) {
-        showModalError('nftMarketplaceModal', 'Please enter valid token ID and price');
-        return;
-      }
-
-      const msg = `List NFT ${tokenId} for sale at ${price} CSPR`;
-      messageInput.value = msg;
-      closeModal('nftMarketplaceModal');
-      sendMessage();
-    }
-
-    /* Buy NFT */
-    function submitBuyNFT(event) {
-      event.preventDefault();
-      const tokenId = parseInt(document.getElementById('nftBuyTokenId').value);
-      const buyer = document.getElementById('nftBuyer').value.trim();
-
-      if (isNaN(tokenId) || !buyer) {
-        showModalError('nftMarketplaceModal', 'Please fill in all fields');
-        return;
-      }
-
-      const msg = `Buy NFT ${tokenId} as ${buyer}`;
-      messageInput.value = msg;
-      closeModal('nftMarketplaceModal');
-      sendMessage();
-    }
-
-    /* Create Collection */
-    function submitCreateCollection(event) {
-      event.preventDefault();
-      const name = document.getElementById('collectionName').value.trim();
-      const symbol = document.getElementById('collectionSymbol').value.trim();
-      const baseUri = document.getElementById('collectionBaseUri').value.trim();
-      const mintPrice = parseFloat(document.getElementById('collectionMintPrice').value);
-
-      if (!name || !symbol || !baseUri || isNaN(mintPrice) || mintPrice <= 0) {
-        showModalError('createCollectionModal', 'Please fill in all fields with valid values');
-        return;
-      }
-
-      const msg = `Create a collection called ${name} with symbol ${symbol}, base_uri ${baseUri} and mint_price ${mintPrice} CSPR`;
-      messageInput.value = msg;
-      closeModal('createCollectionModal');
-      sendMessage();
-    }
-
-    /* Close modals when clicking outside */
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-          this.classList.remove('active');
-        }
-      });
+    /* Enter key sends message */
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') sendMessage();
     });
   </script>
 </body>
