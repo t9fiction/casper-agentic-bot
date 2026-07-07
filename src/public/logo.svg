@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#58a6ff"/>
+      <stop offset="50%" stop-color="#3fb950"/>
+      <stop offset="100%" stop-color="#58a6ff"/>
+    </linearGradient>
+    <linearGradient id="accent2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#79c0ff"/>
+      <stop offset="100%" stop-color="#56d364"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#58a6ff" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#3fb950" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#58a6ff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="neon">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowFilter">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="600" rx="40" fill="url(#bg)"/>
+
+  <!-- Subtle grid dots -->
+  <g opacity="0.08">
+    <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="15" cy="15" r="1" fill="#58a6ff"/>
+    </pattern>
+    <rect width="600" height="600" fill="url(#dots)"/>
+  </g>
+
+  <!-- Glow behind icon -->
+  <ellipse cx="300" cy="240" rx="140" ry="120" fill="url(#glow)" filter="url(#glowFilter)"/>
+
+  <!-- C = Casper hexagonal shape (two interlocking hexagons) -->
+  <g transform="translate(180, 140)" filter="url(#neon)">
+
+    <!-- Outer hexagon ring -->
+    <polygon points="120,0 224,65 224,195 120,260 16,195 16,65" fill="none" stroke="#58a6ff" stroke-width="4" opacity="0.6"/>
+
+    <!-- Inner hexagon -->
+    <polygon points="120,25 200,75 200,185 120,235 40,185 40,75" fill="none" stroke="#3fb950" stroke-width="3.5" opacity="0.8"/>
+
+    <!-- C shape within hexagon (left half + arc) -->
+    <path d="M 100,70 Q 160,60 180,90" fill="none" stroke="url(#accent2)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 100,70 L 100,190" fill="none" stroke="url(#accent2)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 100,190 Q 160,200 180,170" fill="none" stroke="url(#accent2)" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- AI node dots in hexagon -->
+    <circle cx="140" cy="80" r="4" fill="#58a6ff" opacity="0.9"/>
+    <circle cx="180" cy="130" r="4" fill="#3fb950" opacity="0.9"/>
+    <circle cx="140" cy="180" r="4" fill="#58a6ff" opacity="0.9"/>
+    <circle cx="90" cy="130" r="4" fill="#3fb950" opacity="0.9"/>
+
+    <!-- Connecting lines (neural network) -->
+    <line x1="140" y1="80" x2="180" y2="130" stroke="#58a6ff" stroke-width="1.5" opacity="0.5"/>
+    <line x1="180" y1="130" x2="140" y2="180" stroke="#3fb950" stroke-width="1.5" opacity="0.5"/>
+    <line x1="140" y1="180" x2="90" y2="130" stroke="#58a6ff" stroke-width="1.5" opacity="0.5"/>
+    <line x1="90" y1="130" x2="140" y2="80" stroke="#3fb950" stroke-width="1.5" opacity="0.5"/>
+    <line x1="140" y1="80" x2="140" y2="180" stroke="#58a6ff" stroke-width="1" opacity="0.3"/>
+    <line x1="90" y1="130" x2="180" y2="130" stroke="#3fb950" stroke-width="1" opacity="0.3"/>
+
+    <!-- Pulses on nodes -->
+    <circle cx="140" cy="80" r="7" fill="none" stroke="#58a6ff" stroke-width="1.5" opacity="0.6">
+      <animate attributeName="r" values="7;14;7" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="180" cy="130" r="7" fill="none" stroke="#3fb950" stroke-width="1.5" opacity="0.6">
+      <animate attributeName="r" values="7;14;7" dur="2.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0;0.6" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="140" cy="180" r="7" fill="none" stroke="#58a6ff" stroke-width="1.5" opacity="0.6">
+      <animate attributeName="r" values="7;14;7" dur="1.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0;0.6" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Title -->
+  <text x="300" y="440" font-family="'SF Mono', 'Courier New', monospace" font-size="40" font-weight="bold" fill="#e6edf3" text-anchor="middle" letter-spacing="3">
+    CASPER
+  </text>
+  <text x="300" y="478" font-family="'SF Mono', 'Courier New', monospace" font-size="22" font-weight="400" fill="#8b949e" text-anchor="middle" letter-spacing="4">
+    AGENTIC BOT
+  </text>
+
+  <!-- Subtitle -->
+  <text x="300" y="520" font-family="'SF Mono', 'Courier New', monospace" font-size="12" fill="#58a6ff" text-anchor="middle" letter-spacing="6" opacity="0.7">
+    AI-POWERED BLOCKCHAIN
+  </text>
+
+  <!-- Decorative line -->
+  <line x1="200" y1="550" x2="400" y2="550" stroke="url(#accent)" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Small decorative dots at line ends -->
+  <circle cx="200" cy="550" r="3" fill="#58a6ff" opacity="0.6"/>
+  <circle cx="400" cy="550" r="3" fill="#3fb950" opacity="0.6"/>
+
+</svg>

@@ -1,50 +1,45 @@
----
-title: Casper Agentic Bot
-emoji: 🤖
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Casper Agentic Bot
 
-**AI-powered chatbot** for the Casper blockchain — ask questions in plain English, send transfers, analyze accounts, and monitor whale activity. Built with LangGraph + GPT-4o-mini.
+**AI-powered chatbot** for the Casper blockchain — deploy tokens, mint NFTs, create collections, and query the chain using natural language. Built with LangGraph + GPT-4o-mini.
 
-Built for the **Casper Agentic Buildathon 2026** (Qualification Round).
+Built for the **Casper Agentic Buildathon 2026**.
 
 ## Demo
 
 ```
-User:  "What's the current network status?"
-Bot:   Calls GetNetworkStatus → returns era, validator count, total stake, etc.
+User: "Deploy a token called MyCoin with symbol MYC, 8 decimals, 1M supply"
+Bot:  Calls deploy_token → returns token ID and tx hash
 
-User:  "Send 5 CSPR to account-hash-2bc76a..."
-Bot:   Signs + submits a native transfer via casper-client → returns tx hash
+User: "Mint an NFT with metadata URI https://example.com/nft.json to my wallet"
+Bot:  Calls mint_nft → returns token ID and tx hash
 
-User:  "Analyze account account-hash-2bc76a..."
-Bot:   Fetches balance, named keys, and scans recent blocks for activity
+User: "Create a collection called Art with symbol ART and mint price 10 CSPR"
+Bot:  Calls create_collection → returns collection ID
 
-User:  "Monitor this whale account for transactions above 1000 CSPR"
-Bot:   Adds account to background watcher, polls every 30s, alerts in Monitor tab
+User: "What's the network status?"
+Bot:  Calls get_network_status → returns era, validator count, total stake
 
-User:  "Show me the latest 3 blocks"
-Bot:   Calls GetLatestBlocks → returns block hashes, heights, timestamps, proposers
+User: "Send 5 CSPR to account-hash-2bc76a..."
+Bot:  Signs + submits a native transfer via casper-client
 
-User:  "Get account info for 01abc..."
-Bot:   Calls GetAccountInfo → returns balance, staking, delegation status
+User: "Analyze account account-hash-2bc76a..."
+Bot:  Fetches balance, named keys, and scans recent blocks for largest txs
 ```
 
 ## Features
 
 | Feature | Description |
 |---|---|
-| **Blockchain Queries** | 87+ MCP tools for on-chain data (blocks, accounts, validators, contracts, NFTs, DeFi) |
-| **CSPR Transfers** | Agent signs and submits native CSPR transfers using the server's secret key |
+| **Token Creation** | Deploy custom tokens with name, symbol, decimals, total supply via chat or modal form |
+| **Token Transfers** | Transfer tokens between wallets, check balances |
+| **NFT Minting** | Mint NFTs with metadata URIs, transfer, list for sale, buy listed NFTs |
+| **Collection Factory** | Create NFT collections with configurable mint prices |
+| **Blockchain Queries** | 87+ MCP tools for on-chain data (blocks, accounts, validators, contracts) |
+| **CSPR Transfers** | Agent signs and submits native CSPR transfers |
 | **Account Analysis** | Detailed account info with recent transaction scanning |
-| **Whale Monitoring** | Background watcher that polls accounts every 30s and displays alerts in the Monitor tab |
-| **Smart Contract Interaction** | Deployed Greeter contract on Testnet — read/write entry points via CLI |
+| **Portfolio Dashboard** | Web dashboard showing all created tokens, NFTs, and collections |
+| **Multi-Contract Tracking** | Deploy and track multiple contract instances by name |
+| **Multi-Step Workflows** | Agent chains multiple operations (deploy → transfer → verify) autonomously |
 
 ## Tech Stack
 
@@ -56,20 +51,20 @@ Bot:   Calls GetAccountInfo → returns balance, staking, delegation status
 | Blockchain Data | Casper MCP Server (via CSPR.cloud) |
 | MCP Protocol | `mcp` Python SDK (Streamable HTTP) |
 | Smart Contracts | Odra Framework (Rust) |
-| Frontend | HTML + CSS + vanilla JS |
+| Frontend | HTML + CSS + vanilla JS (chat + modals + portfolio) |
 
 ## Quick Start
 
-### 1. Prerequisites
+### Prerequisites
 - Python 3.10+
 - [OpenAI API key](https://platform.openai.com/api-keys)
 - [CSPR.cloud API key](https://cspr.cloud) (free)
-- [Casper CLI client](https://docs.casper.network/developers/cli/setup/) (for transfers)
-- A funded Testnet account with a PEM secret key (for transfers)
+- A funded Testnet account with a PEM secret key
 
-### 2. Setup
+### Setup
 
 ```bash
+git clone https://github.com/t9fiction/casper-agentic-bot
 cd casper-agentic-bot
 python -m venv .venv
 source .venv/bin/activate
@@ -78,18 +73,18 @@ cp .env.example .env
 ```
 
 Edit `.env`:
-
 ```
 OPENAI_API_KEY=sk-...
 CSPR_CLOUD_API_KEY=your-key
-CASPER_NETWORK=testnet
-SECRET_KEY_PATH=secret_key.pem
+CASPER_NETWORK=casper-test
+SECRET_KEY="-----BEGIN EC PRIVATE KEY-----\n..."
 CASPER_NODE=http://65.109.115.124:7777
+CONTRACT_PACKAGE_HASH=hash-5095fbfcbfa662ef13731dd0822317e100f2642230c2a35f0241e888eb8383eb
+CONTRACT_HASH=contract-c3b50a15995f97f424b8e4541499d03a80e0f2ba7b528edb07c9712e7dcc3354
+WALLET_ACCOUNT_HASH=account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5
 ```
 
-Place your PEM secret key at `secret_key.pem` in the project root.
-
-### 3. Run
+### Run
 
 ```bash
 uvicorn src.main:app --reload
@@ -97,144 +92,124 @@ uvicorn src.main:app --reload
 
 Open **http://localhost:8000**.
 
-## Smart Contract (Testnet)
+### Docker
 
-A **Greeter** contract built with Odra is deployed on Casper Testnet. It stores a greeting string and exposes entry points to read, write, and interact with it.
+```bash
+docker compose up -d
+# Open http://localhost:8000
+```
+
+## Smart Contracts (Casper Testnet)
+
+### Token Factory
+| Entry Point | Args | Returns |
+|---|---|---|
+| `deploy_token` | name, symbol, decimals (U8), total_supply (U256) | U32 (token_id) |
+| `transfer` | token_id (U32), recipient (Key), amount (U256) | — |
+| `balance_of` | token_id (U32), owner (Key) | U256 |
+| `mint` | token_id (U32), recipient (Key), amount (U256) | — |
+| `token_info` | token_id (U32) | Option\<TokenInfo\> |
+| `total_tokens` | — | U32 |
+
+### NFT Marketplace
+| Entry Point | Args | Returns |
+|---|---|---|
+| `mint_nft` | metadata_uri (String), recipient (Key) | U64 (token_id) |
+| `transfer_nft` | token_id (U64), recipient (Key) | — |
+| `list_nft` | token_id (U64), price (U256) | — |
+| `buy_nft` | token_id (U64), buyer (Key) | — |
+| `nft_info` | token_id (U64) | Option\<NftInfo\> |
+| `total_nfts` | — | U64 |
+
+### Collection Factory
+| Entry Point | Args | Returns |
+|---|---|---|
+| `create_collection` | name, symbol, base_uri, mint_price (U256) | U32 (collection_id) |
+| `mint_nft` | collection_id (U32), recipient (Key) | U64 |
+| `list_nft` | token_id (U64), price (U256) | — |
+| `buy_nft` | token_id (U64), buyer (Key) | — |
 
 ### Deployed Addresses
 
-| Field | Value |
-|---|---|
-| Contract Package Hash | `contract-package-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4` |
-| Contract Hash (v1) | `contract-e294029ed8d748f31ab36690e6f68bc777cef9094cfbb0a91fd8c3c41745ba72` |
-| Account | `account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5` |
-| Node | `65.109.115.124:7777` |
-
-### Entry Points
-
-| Name | Args | Returns | Description |
-|---|---|---|---|
-| `get_greeting` | none | `String` | Read the current greeting |
-| `set_greeting` | `greeting: String` | `Unit` | Write a new greeting |
-| `greet` | none | `String` | Returns "Hello, {greeting}!" + increments counter |
-| `get_greet_count` | none | `U32` | Number of times `greet()` was called |
-
-### Interact (read/write) via CLI
-
-**Prerequisite:** Install the [Casper CLI client](https://docs.casper.network/developers/cli/setup/).
-
-Set these once (paste into your terminal):
-
-```bash
-export NODE=http://65.109.115.124:7777
-export CHAIN=casper-test
-export PACKAGE=hash-ac102e24f6dc92e7e3b098f2af114817a67b62fe35764813854057a0859571f4
-export KEY=/path/to/your/secret_key.pem
-```
-
-#### Read — get the greeting
-
-```bash
-casper-client put-transaction package \
-    --node-address $NODE --chain-name $CHAIN \
-    --secret-key $KEY \
-    --contract-package-hash $PACKAGE \
-    --session-entry-point get_greeting \
-    --payment-amount 5000000000 \
-    --standard-payment true --gas-price-tolerance 1
-```
-
-Save the `transaction_hash` from the output, then check the result:
-
-```bash
-casper-client get-transaction --node-address $NODE <TX_HASH>
-```
-
-Look for `"error_message": null` — that means success.
-
-#### Write — set a new greeting
-
-```bash
-casper-client put-transaction package \
-    --node-address $NODE --chain-name $CHAIN \
-    --secret-key $KEY \
-    --contract-package-hash $PACKAGE \
-    --session-entry-point set_greeting \
-    --session-arg "greeting:string='GM Casper!'" \
-    --payment-amount 5000000000 \
-    --standard-payment true --gas-price-tolerance 1
-```
-
-#### Greet — get a personalized message + increment counter
-
-```bash
-casper-client put-transaction package \
-    --node-address $NODE --chain-name $CHAIN \
-    --secret-key $KEY \
-    --contract-package-hash $PACKAGE \
-    --session-entry-point greet \
-    --payment-amount 5000000000 \
-    --standard-payment true --gas-price-tolerance 1
-```
-
-#### Verify the greeting was updated
-
-Call `get_greeting` again (first command) to confirm the new greeting is stored.
+| Contract | Package Hash | Contract Hash |
+|---|---|---|
+| Token Factory | `hash-5095fbfcbfa662ef13731dd0822317e100f2642230c2a35f0241e888eb8383eb` | `contract-c3b50a15995f97f424b8e4541499d03a80e0f2ba7b528edb07c9712e7dcc3354` |
+| NFT Marketplace | `hash-0c5849200ac2d72291b5bd811024396bb4954e82b8e155105c4ee7b0cedcb896` | `contract-2168fc559eff8ed6d521f4b67ac297181547e1fcbe845b215aeda228218bd738` |
 
 ## Chat UI
 
-Open `http://localhost:8000` and use natural language:
+Open `http://localhost:8000` and use natural language or click suggestion chips to open modal forms:
 
 | You say | What happens |
 |---|---|
-| *"What's the network status?"* | Agent calls MCP `GetNetworkStatus` |
-| *"Send 5 CSPR to account-hash-2bc76a..."* | Agent signs + submits a native transfer |
-| *"Analyze account account-hash-..."* | Agent fetches balance, info, and recent activity |
-| *"Monitor account-hash-... for transactions > 100 CSPR"* | Background watcher starts, alerts in Monitor tab |
-| *"What entry points does the greeter contract have?"* | Agent queries the deployed contract |
+| *"Deploy a token called MyCoin with symbol MYC, 8 decimals, 1M supply"* | Agent calls `deploy_token` |
+| *"Mint an NFT with URI https://..."* | Agent calls `mint_nft` |
+| *"Create a collection called Art with mint price 10"* | Agent calls `create_collection` |
+| *"What's the network status?"* | Agent calls `get_network_status` |
+| *"Send 5 CSPR to account-hash-..."* | Agent signs + submits native transfer |
+| *"Analyze account account-hash-..."* | Agent fetches balance and activity |
 
-### Chat Tab
-Type or click suggestion chips. The agent autonomously decides which tool to call.
+### Modals
+- **Deploy Token** — fillable form for name, symbol, decimals, supply
+- **Transfer Token** — form for token ID, recipient, amount
+- **Balance Check** — form for token ID + account
+- **NFT Marketplace** — 3-tab interface (Mint / List / Buy)
+- **Collection Creator** — form for name, symbol, base URI, mint price
 
-### Monitor Tab
-Switch to the **Monitor** tab to:
-- Add accounts to watch (with optional label and minimum CSPR threshold)
-- View live alerts from the background watcher (polls every 30s)
-- Remove monitored accounts
+### Portfolio Dashboard
+Open `http://localhost:8000/portfolio` to see all created tokens, minted NFTs, and collections. Connect your Casper wallet to view your portfolio.
 
-> **Note:** Write calls to the Greeter contract (`set_greeting`) are CLI-only. The hosted MCP endpoint exposes read tools only.
+## Docker Setup
+
+```bash
+docker compose build   # ~10 min (compiles casper-client from source)
+docker compose up -d   # runs on port 8000
+```
+
+Multi-stage build: Stage 1 compiles `casper-client` 5.0.1 with nightly Rust, Stage 2 runs Python 3.13-slim.
+
+## Test
+
+```bash
+source .venv/bin/activate
+python -m pytest tests/test_integration.py -v --asyncio-mode=auto
+```
 
 ## Source Code
 
-The smart contract source is in `smart-contract/src/greeter.rs` (Odra Rust). Build locally:
+Smart contracts in `smart-contract/src/`:
+- `token_factory.rs` — Token Factory (Token Faucet standard)
+- `nft_marketplace.rs` — NFT Marketplace
+- `collection_factory.rs` — Collection Factory
 
+Build locally:
 ```bash
 cd smart-contract
 cargo odra build
-cargo odra deploy --network testnet
 ```
 
-## Hackathon Submission Checklist
+Backend in `src/`:
+- `main.py` — FastAPI server
+- `agent.py` — LangGraph ReAct agent
+- `tools.py` — LangChain tools (deploy, transfer, mint, query, analyze)
+- `mcp_client.py` — MCP client (Streamable HTTP)
+- `portfolio_cache.py` — JSON-backed portfolio cache
+- `contract_registry.py` — JSON-backed contract instance registry
+
+## Hackathon Submission
 
 - [x] Working prototype querying Casper Testnet
-- [x] On-chain component (Greeter contract on Testnet)
+- [x] Token Factory deployed on Testnet (3 entry points)
+- [x] NFT Marketplace deployed on Testnet
+- [x] Collection Factory deployed on Testnet
 - [x] Open-source GitHub repo with README
-- [x] Deploy smart contract to Testnet
-- [x] Push to GitHub
-- [ ] Demo video (record UI walkthrough + code)
+- [x] Docker image (reproducible build)
+- [x] Frontend UI with modals and portfolio dashboard
+- [ ] Demo video
+- [ ] Deploy to free cloud
 
-### Judging Criteria Alignment
-
-| Criterion | How We Hit It |
-|---|---|
-| Technical Execution | FastAPI + LangGraph + MCP + background monitor worker |
-| Innovation & Originality | Natural language → blockchain via AI agent that transacts |
-| Use of AI / Agentic Systems | GPT-4o-mini autonomously routes tool calls, signs transfers, analyzes accounts |
-| Real-World Applicability | Send CSPR, analyze whale wallets, monitor accounts — practical DeFi use |
-| Working Smart Contracts | Greeter contract deployed on Testnet with verified entry points |
-| Long-Term Launch Plans | Extensible to DeFi protocols, staking automation, multi-agent systems |
-
-## Resources
+## Links
+- [GitHub](https://github.com/t9fiction/casper-agentic-bot)
 - [Casper AI Toolkit](https://www.casper.network/ai)
 - [Casper MCP Server](https://github.com/msanlisavas/casper-mcp)
 - [CSPR.cloud](https://cspr.cloud)
