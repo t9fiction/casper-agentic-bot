@@ -582,10 +582,10 @@
       <button onclick="sendSuggestion('Analyze my account')">Analyze Me</button>
       <span class="sugg-label">Tokens</span>
       <button onclick="promptCreateToken()">Create Token</button>
-      <button onclick="sendSuggestion('Transfer 100 tokens of token 0 to account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Transfer</button>
-      <button onclick="sendSuggestion('What is the balance of token 0 for my account')">Balance</button>
+      <button onclick="promptTransferToken()">Transfer</button>
+      <button onclick="promptCheckBalance()">Balance</button>
       <span class="sugg-label">NFTs</span>
-      <button onclick="sendSuggestion('Mint an NFT with metadata URI ipfs://my-nft.json to my account')">Mint NFT</button>
+      <button onclick="promptMintNFT()">Mint NFT</button>
       <button onclick="sendSuggestion('How many NFTs have been minted?')">Total NFTs</button>
       <span class="sugg-label">Actions</span>
       <button onclick="promptSendCSPR()">Send CSPR</button>
@@ -726,6 +726,35 @@
       const supply = prompt('Total supply (e.g. 1000000):');
       if (!supply) return;
       const msg = `Create a token called ${name} with symbol ${symbol}, ${decimals} decimals and ${supply} total supply`;
+      messageInput.value = msg;
+      sendMessage();
+    }
+
+    function promptTransferToken() {
+      const tokenId = prompt('Token ID:');
+      if (!tokenId) return;
+      const amount = prompt('Amount to transfer:');
+      if (!amount) return;
+      const recipient = prompt('Recipient (account-hash-...):');
+      if (!recipient) return;
+      const msg = `Transfer ${amount} tokens of token ${tokenId} to ${recipient}`;
+      messageInput.value = msg;
+      sendMessage();
+    }
+
+    function promptCheckBalance() {
+      const tokenId = prompt('Token ID:');
+      if (!tokenId) return;
+      const msg = `What is the balance of token ${tokenId} for my account`;
+      messageInput.value = msg;
+      sendMessage();
+    }
+
+    function promptMintNFT() {
+      const uri = prompt('Metadata URI (e.g. ipfs://...):');
+      if (!uri) return;
+      const recipient = prompt('Recipient (account-hash-... or "my account"):') || 'my account';
+      const msg = `Mint an NFT with metadata URI ${uri} to ${recipient}`;
       messageInput.value = msg;
       sendMessage();
     }
