@@ -581,7 +581,7 @@
       <button onclick="sendSuggestion('What is my balance')">My Balance</button>
       <button onclick="sendSuggestion('Analyze my account')">Analyze Me</button>
       <span class="sugg-label">Tokens</span>
-      <button onclick="sendSuggestion('Create a token called MyCoin with symbol MYC, 8 decimals and 1 million total supply')">Create Token</button>
+      <button onclick="promptCreateToken()">Create Token</button>
       <button onclick="sendSuggestion('Transfer 100 tokens of token 0 to account-hash-2bc76a5348a847ff51738945d681b97dda6ed606f7ae4282d1a0eb409ef301f5')">Transfer</button>
       <button onclick="sendSuggestion('What is the balance of token 0 for my account')">Balance</button>
       <span class="sugg-label">NFTs</span>
@@ -712,6 +712,20 @@
       const amount = prompt('Enter the amount in CSPR:');
       if (!amount) return;
       const msg = `Send ${amount} CSPR to ${recipient}`;
+      messageInput.value = msg;
+      sendMessage();
+    }
+
+    function promptCreateToken() {
+      const name = prompt('Token name:');
+      if (!name) return;
+      const symbol = prompt('Token symbol (e.g. MYC):');
+      if (!symbol) return;
+      const decimals = prompt('Decimals (0-18):');
+      if (!decimals) return;
+      const supply = prompt('Total supply (e.g. 1000000):');
+      if (!supply) return;
+      const msg = `Create a token called ${name} with symbol ${symbol}, ${decimals} decimals and ${supply} total supply`;
       messageInput.value = msg;
       sendMessage();
     }
